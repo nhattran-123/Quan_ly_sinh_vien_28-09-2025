@@ -1,6 +1,7 @@
 from sqlalchemy import ForeignKey
 from __init__ import db
 from flask_login import UserMixin
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(db.Model, UserMixin):
@@ -56,7 +57,7 @@ class ClassSection(db.Model):
     id = db.Column(db.String(15), primary_key=True)
     course_id = db.Column(db.String(15), ForeignKey('course.id'), nullable=False)
     lecturer_id = db.Column(db.String(15), ForeignKey('lecturer.user_id'), nullable=False)
-    term_id = db.Column(db.String(15), ForeignKey('term.id'), nullable=False)
+    term_id = db.Column(db.String(15), ForeignKey('terms.id'), nullable=False)
     room_id = db.Column(db.String(15), ForeignKey('room.id'), nullable=False)
     max_students = db.Column(db.Integer, nullable=False)
     schedule = db.Column(db.Integer, nullable=False)
