@@ -33,10 +33,7 @@ def login():
     user =User.query.get(user_id)
 
     if not user or user.check_password(password)==False:
-        return jsonify({"error": "ID hoặc mật khẩu không đúng",
-                        "password": password,
-                        "check":user.check_password(password)
-                        }), 401
+        return jsonify({"error": "ID hoặc mật khẩu không đúng" }), 401
     login_user(user)
     return jsonify({
         "messager": "Đăng nhập thành công",
@@ -44,7 +41,8 @@ def login():
         "full_name": user.full_name,
         "role": user.role
     }), 200
-@auth_bp.route('/logout',methods=["POST"])
+@auth_bp.route('/logout',methods=["POST","GET"])
+@login_required
 def logout():
     """API đăng xuất"""
     logout_user()
