@@ -8,10 +8,10 @@ with app.app_context():
         admin_user = User(
             id="admin01",
             email="admin@example.com",
+            password_hash="Admin123",
             role="admin",
             full_name="System Administrator"
         )
-        admin_user.set_password("Admin123")
         db.session.add(admin_user)
         db.session.flush()  # Lấy admin_user.id
 

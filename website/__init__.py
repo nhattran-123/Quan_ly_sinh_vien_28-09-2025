@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from os import path
 
 db = SQLAlchemy()
-DB_NAME = 'database.sqlite3'
+DB_NAME = 'Qlsv.db'
 
 def create_app():
     app = Flask(__name__)
@@ -11,7 +11,9 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     db.init_app(app)
 
-    # tạo DB nếu chưa có
+    # 🔑 Import models trước khi tạo DB
+    from . import models  
+
     with app.app_context():
         if not path.exists(path.join(app.root_path, DB_NAME)):
             db.create_all()
