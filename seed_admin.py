@@ -12,6 +12,7 @@ with app.app_context():
             role="admin",
             full_name="System Administrator"
         )
+        admin_user.set_password("Admin123")
         db.session.add(admin_user)
         db.session.flush()  # Lấy admin_user.id
 

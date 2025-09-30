@@ -1,23 +1,27 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_login import LoginManager
 db = SQLAlchemy()
-
+login_manager = LoginManager()
 def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Qlsv.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    app.config['SECRET_KEY'] = "this_is_a_secret_key_change_it"  # ← Thêm dòng này
+    
     db.init_app(app)
+    login_manager.init_app(app)
 
     # Import và đăng ký blueprint
     from .api.index import auth_bp
-    from .api.student import student_bp
-    from .api.lecturer import teacher_bp
-    from .api.admin import admin_bp
+    # from .api.student import student_bp
+    # from .api.lecturer import lecturer_bp
+    # from .api.admin import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(student_bp, url_prefix="/api/student")
-    app.register_blueprint(teacher_bp, url_prefix="/api/lecturer")
-    app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    # app.register_blueprint(student_bp, url_prefix="/api/student")
+    # app.register_blueprint(lecturer_bp, url_prefix="/api/lecturer")
+    # app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
     return app
