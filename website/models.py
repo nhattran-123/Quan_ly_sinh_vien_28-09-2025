@@ -152,7 +152,7 @@ class Grade(db.Model):
     id = db.Column(db.String(15), primary_key=True)
     enrollment_id = db.Column(db.String(15), db.ForeignKey('enrollments.id'), nullable=False)
     exam_id = db.Column(db.String(15), db.ForeignKey('exams.id'), nullable=False)
-    final_score = db.Column(db.Float, nullable=False)
+    final_score = db.Column(db.Float, nullable=True)
     letter_score = db.Column(db.String(2), nullable=False)
     notes = db.Column(db.Text, nullable=True)
 

@@ -16,12 +16,12 @@ def create_app():
     # Import và đăng ký blueprint
     from .api.index import auth_bp
     # from .api.student import student_bp
-    from .api.lecturer import lecturer_bp
+    # from .api.lecturer import lecturer_bp
     # from .api.admin import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     # app.register_blueprint(student_bp, url_prefix="/api/student")
-    app.register_blueprint(lecturer_bp, url_prefix="/api/lecturer")
+    # app.register_blueprint(lecturer_bp, url_prefix="/api/lecturer")
     # app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
     return app
