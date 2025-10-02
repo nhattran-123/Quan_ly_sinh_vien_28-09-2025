@@ -44,7 +44,7 @@ def login():
     }), 200)
 
     # Đặt cookie (tùy chỉnh thêm, ví dụ 1h)
-    resp.set_cookie("user_id", user.id, max_age=3600, httponly=True, samesite='Lax')
+    resp.set_cookie("user_id", user.id, max_age=900, httponly=True, samesite='Lax')
 
     return resp
 
