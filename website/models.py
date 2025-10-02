@@ -16,6 +16,7 @@ class User(db.Model, UserMixin):
     full_name = db.Column(db.String(300), default='', nullable=False)
     date_of_birth = db.Column(DateTime(timezone=True), nullable=True)
 
+    admin = db.relationship('Admin', uselist=False, back_populates='user')
     lecturer = db.relationship('Lecturer', uselist=False, back_populates='user')
     student = db.relationship('Student', uselist=False, back_populates='user')
 
@@ -30,6 +31,8 @@ class User(db.Model, UserMixin):
 class Admin(db.Model):
     __tablename__ = 'admins'
     user_id = db.Column(db.String(15), db.ForeignKey('users.id'), primary_key=True, nullable=False)
+
+    user = db.relationship('User', back_populates='admin')
 
 class Lecturer(db.Model):
     __tablename__ = 'lecturers'
