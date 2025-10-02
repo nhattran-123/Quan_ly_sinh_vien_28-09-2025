@@ -14,10 +14,6 @@ Lấy thông tin current_user: GET http://127.0.0.1:5000/api/auth/current_user
 # Tạo blueprint cho module auth
 auth_bp = Blueprint('auth', __name__)
 
-# # Khai báo login_manager
-# from flask_login import LoginManager
-# login_manager = LoginManager()
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
