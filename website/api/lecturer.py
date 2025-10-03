@@ -35,7 +35,7 @@ def userinfor():
         user_data["details"]={
             "department_id":Lecturer_infor.department_id,
             "department_name":Lecturer_infor.department.name,
-            "position":Lecturer_infor.position_id
+            "position":Lecturer_infor.position
         }
     else:
         user_data["details"]={"error":"Lecturer details record missing"}
