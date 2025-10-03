@@ -20,10 +20,11 @@ last_names = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Vũ",
 admin_users_data = []
 
 def seed_admin():
-    user = User(id='ADM001', email='none', role="admin", full_name='Adminstator', date_of_birth=None)
+    user = User(id='ADM001', email='none', role="admin", full_name='Administrator', date_of_birth=None)
     user.set_password(PASSWORD_DEFAULT)
     admin_users_data.extend([user])
     data_to_add.extend(admin_users_data)
+    admin = Admin(user=user)
     print("Admin added")
 
 # Tao department ---------------------------------------------------------------------------------------------
