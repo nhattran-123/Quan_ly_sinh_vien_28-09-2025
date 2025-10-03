@@ -1,14 +1,15 @@
 from flask import Blueprint, jsonify
 from flask_login import login_required, current_user
-# from .. import db
-from ..models import Lecturer,User,ClassSection 
-#,Department,Student,Exam,Enrollment,Grade,Course,Terms,Room
+from .. import db
+from ..models import Lecturer,User,ClassSection,Enrollment,Student
+#,Department,Exam,Grade,Course,Terms,Room
 # from datetime import date
 from .. import login_manager
 lecturer_bp=Blueprint('lecturer',__name__)
 """
     Lấy thông tin giảng viên :http://127.0.0.1:5000/api/lecturer/userinfor
     Danh sách các lớp mà giảng viên giảng dạy:http://127.0.0.1:5000/api/lecturer/classSections
+    Danh sách sinh viên từng lớp:http://127.0.0.1:5000/api/lecturer/list_student/<class_id>
 """
 
 @login_manager.user_loader
@@ -59,3 +60,40 @@ def classSections():
         return jsonify("Không có phụ trách lớp nào"), 200
     else:
         return jsonify(list_class), 200
+@lecturer_bp.route("/list_student/<class_id>", methods=["GET"])
+@login_required
+def list_student(class_id):
+    students_in_class = db.session.query(
+        User.id, 
+        User.full_name, 
+        User.date_of_birth, 
+        User.email
+    ).join(
+        Student, User.id == Student.user_id 
+    ).join(
+        Enrollment, Student.user_id == Enrollment.student_id 
+    ).filter(
+        Enrollment.class_id == class_id 
+    ).all() # Lấy tất cả kết quả
+    danh_sach = []
+    dem = 1
+    
+    for student_id, full_name, date_of_birth, email in students_in_class:
+        # Kiểm tra và định dạng ngày sinh
+        birth_day_str = date_of_birth.strftime("%Y-%m-%d") if date_of_birth else None
+
+        # Sử dụng 'dem' làm key thay vì luôn là '1'
+        danh_sach.append({
+            "STT":dem,
+            "full_name": full_name,
+            "id": student_id,
+            "email": email,
+            "birth_day": birth_day_str
+        })
+        dem += 1
+    if not danh_sach:
+        return jsonify({"message": "Không có sinh viên nào trong lớp này hoặc ID lớp không hợp lệ."}), 404
+    else:
+        return jsonify(danh_sach)
+        
+
