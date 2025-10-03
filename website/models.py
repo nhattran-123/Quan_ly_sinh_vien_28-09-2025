@@ -38,7 +38,7 @@ class Lecturer(db.Model):
     __tablename__ = 'lecturers'
     user_id = db.Column(db.String(15), db.ForeignKey('users.id'), primary_key=True, nullable=False)
     department_id = db.Column(db.String(15), db.ForeignKey('departments.id'), nullable=True)
-    position_id = db.Column(db.String(100), nullable=False)
+    position = db.Column(db.String(100), nullable=False)
 
     user = db.relationship('User', back_populates='lecturer')
     department = db.relationship('Department', back_populates='lecturers')

@@ -1,16 +1,13 @@
-import random
-from zoneinfo import available_timezones
-
 from website import create_app, db
-from website.models import User, Lecturer, Student, Department, Terms, Room, Course, ClassSection, Enrollment, Exam, Grade
-from datetime import date, datetime, timedelta
-from random import choice, randint, uniform, sample
-from sqlalchemy import Numeric 
+from website.models import User, Lecturer, Student, Department, Terms, Room, Course, ClassSection, Enrollment, Exam, \
+    Grade, Admin
+from datetime import date, datetime
+from random import choice, randint, sample
+
 
 app = create_app()
 
 PASSWORD_DEFAULT = '123456'
-DEPARTMENT_IDS_EXISTING = ["CNTT1", "KVT1", "KTDT1", "QTKT1", "ATTT", "TTNT", "TCKT", "DPT"]
 POSITION_EXISTING = ["Giảng viên", "Giảng viên", "Trưởng bộ môn", "Trưởng khoa"]
 
 data_to_add = []
@@ -22,19 +19,32 @@ last_names = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Vũ",
 # Tao 1 admin -------------------------------------------------------------------------------------------
 admin_users_data = []
 
-def generate_admin():
+def seed_admin():
     user = User(id='ADM001', email='none', role="admin", full_name='Adminstator', date_of_birth=None)
     user.set_password(PASSWORD_DEFAULT)
     admin_users_data.extend([user])
     data_to_add.extend(admin_users_data)
     print("Admin added")
 
-# Tao 100 sinh vien -------------------------------------------------------------------------------------------
+# Tao department ---------------------------------------------------------------------------------------------
+departments_data = []
+department_ids = ["CNTT1", "ATTT", "DPT", "TCKT"]
+
+def seed_department():
+    departments_data.append(Department(id="CNNT1", name="Khoa công nghệ thông tin 1"))
+    departments_data.append(Department(id="ATTT", name="Khoa an toàn thông tin"))
+    departments_data.append(Department(id="DPT", name="Khoa đa phương tiện"))
+    departments_data.append(Department(id="TCKT", name="Khoa tài chính kế toán"))
+
+    data_to_add.extend(departments_data)
+    print("4 departments added")
+
+# Tao 150 sinh vien -------------------------------------------------------------------------------------------
 student_users_data = []
 all_student_ids = []
 
-def generate_student():
-    for i in range(1, 101):
+def seed_student():
+    for i in range(1, 151):
         user_id = f"SV{i:03d}"
         all_student_ids.append(user_id)
         email = f"{user_id}@std.ptit.edu.vn"
@@ -46,7 +56,7 @@ def generate_student():
         birth_year = randint(2004, 2006)
         date_of_birth = date(birth_year, randint(1, 12), randint(1, 28))
 
-        dept_id = choice(DEPARTMENT_IDS_EXISTING)
+        dept_id = choice(department_ids)
         entry_year = 2024
 
         user = User(id=user_id, email=email, role="student", full_name=full_name, date_of_birth=date_of_birth)
@@ -56,15 +66,15 @@ def generate_student():
         student_users_data.extend([user, student])
 
     data_to_add.extend(student_users_data)
-    print("100 students created")
+    print("150 students created")
 
 
-# Tao 10 giang vien -------------------------------------------------------------------------------------------
+# Tao 4 giang vien -------------------------------------------------------------------------------------------
 lecturer_users_data = []
 all_lecturer_ids = []
 
-def generate_lecturer():
-    for i in range(1, 6):
+def seed_lecturer():
+    for i in range(1, 5):
         user_id = f"GV{i:03d}"
         all_lecturer_ids.append(user_id)
         email = f"{user_id}@std.ptit.edu.vn"
@@ -76,20 +86,20 @@ def generate_lecturer():
         birth_year = randint(1970, 2000)
         date_of_birth = date(birth_year, randint(1, 12), randint(1, 28))
 
-        dept_id = choice(DEPARTMENT_IDS_EXISTING)
+        dept_id = choice(department_ids)
 
         user = User(id=user_id, email=email, role="lecturer", full_name=full_name, date_of_birth=date_of_birth)
         user.set_password(PASSWORD_DEFAULT)
-        lecturer = Lecturer(user_id=user_id, department_id=dept_id, position_id=choice(POSITION_EXISTING))
+        lecturer = Lecturer(user_id=user_id, department_id=dept_id, position=choice(POSITION_EXISTING))
 
         lecturer_users_data.extend([user, lecturer])
 
     data_to_add.extend(lecturer_users_data)
-    print("5 lecturers created")
+    print("4 lecturers created")
 
 
 # Tao cac du lieu con lai -------------------------------------------------------------------------------
-def generate_other_data():
+def seed_other_data():
     # Tao terms
     terms = [
         Terms(id="20241", name="Học kỳ I - Năm Nhất (2024)", start_date=datetime(2024, 9, 5), end_date=datetime(2025, 1, 15)),
@@ -125,21 +135,26 @@ def generate_other_data():
     print("6 courses created")
 
     # Tao lop hoc phan - classSection
-    random.shuffle(all_lecturer_ids)
     term_id = "20241"
     
     class_sections = []
     class_details = [
-        ("C101-241A", course_ids[0], all_lecturer_ids[0], term_id, room_ids_for_class[0], 30, 1), # IT101 - Nhóm A
-        ("C101-241B", course_ids[0], all_lecturer_ids[1], term_id, room_ids_for_class[1], 30, 2), # IT101 - Nhóm B
-        ("C102-241", course_ids[1], all_lecturer_ids[2], term_id, room_ids_for_class[2], 30, 3), # Toán A1
-        ("C301-241", course_ids[2], all_lecturer_ids[3], term_id, room_ids_for_class[3], 30, 4), # Vật lý
-        ("C401-241", course_ids[3], all_lecturer_ids[4], term_id, room_ids_for_class[4], 30, 5), # KT Chính trị
-        ("C501-241", course_ids[4], all_lecturer_ids[0], term_id, room_ids_for_class[5], 30, 6), # Tin học ĐC
-        ("C601-241A", course_ids[5], all_lecturer_ids[1], term_id, room_ids_for_class[6], 30, 7), # Tiếng Anh 1 - Nhóm A
-        ("C601-241B", course_ids[5], all_lecturer_ids[2], term_id, room_ids_for_class[7], 30, 8), # Tiếng Anh 1 - Nhóm B
-        ("C202-241", course_ids[1], all_lecturer_ids[3], term_id, room_ids_for_class[8], 30, 9), # Toán A1 (Nhóm khác)
-        ("C302-241", course_ids[2], all_lecturer_ids[4], term_id, room_ids_for_class[9], 30, 10), # Vật lý (Nhóm khác)
+        ("C001-241", course_ids[0], all_lecturer_ids[0], term_id, room_ids_for_class[0], 30, 1),
+        ("C002-241", course_ids[0], all_lecturer_ids[1], term_id, room_ids_for_class[1], 30, 1),
+        ("C003-241", course_ids[0], all_lecturer_ids[2], term_id, room_ids_for_class[2], 30, 1),
+        ("C004-241", course_ids[1], all_lecturer_ids[3], term_id, room_ids_for_class[3], 30, 1),
+        ("C005-241", course_ids[1], all_lecturer_ids[0], term_id, room_ids_for_class[4], 30, 1),
+        ("C006-241", course_ids[1], all_lecturer_ids[1], term_id, room_ids_for_class[5], 30, 1),
+        ("C007-241", course_ids[2], all_lecturer_ids[2], term_id, room_ids_for_class[6], 30, 1),
+        ("C008-241", course_ids[2], all_lecturer_ids[3], term_id, room_ids_for_class[7], 30, 1),
+        ("C009-241", course_ids[2], all_lecturer_ids[0], term_id, room_ids_for_class[8], 30, 1),
+        ("C010-241", course_ids[3], all_lecturer_ids[1], term_id, room_ids_for_class[9], 30, 1),
+        ("C011-241", course_ids[3], all_lecturer_ids[2], term_id, room_ids_for_class[0], 30, 2),
+        ("C012-241", course_ids[3], all_lecturer_ids[3], term_id, room_ids_for_class[1], 30, 2),
+        ("C013-241", course_ids[4], all_lecturer_ids[0], term_id, room_ids_for_class[2], 30, 2),
+        ("C014-241", course_ids[4], all_lecturer_ids[1], term_id, room_ids_for_class[3], 30, 2),
+        ("C015-241", course_ids[4], all_lecturer_ids[2], term_id, room_ids_for_class[4], 30, 2),
+        ("C016-241", course_ids[5], all_lecturer_ids[3], term_id, room_ids_for_class[5], 30, 2),
     ]
     
     term_20241 = terms[0]
@@ -211,10 +226,11 @@ if __name__ == '__main__':
     with app.app_context():
         try:
             print("--- BẮT ĐẦU SEED DỮ LIỆU MẪU (100 SV, HK 20241, GRADE TRỐNG) ---")
-            generate_admin()
-            generate_student()
-            generate_lecturer()
-            generate_other_data()
+            seed_admin()
+            seed_department()
+            seed_student()
+            seed_lecturer()
+            seed_other_data()
 
             db.session.add_all(data_to_add)
 
