@@ -145,7 +145,7 @@ class Attendance(db.Model):
 
 class AssignmentType(db.Model):
     __tablename__ = 'assignment_types'
-    id = db.Column(db.String(50), primary_key=True)
+    id = db.Column(db.String(15), primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
 
     assignments = db.relationship('Assignment', back_populates='assignment_type', lazy=True)
@@ -155,7 +155,7 @@ class AssignmentType(db.Model):
 class AssignmentWeight(db.Model):
     __tablename__ = 'assignment_weights'
     class_id = db.Column(db.String(15), ForeignKey('class_sections.id'), primary_key=True)
-    assignment_type_id = db.Column(db.Integer, ForeignKey('assignment_types.id'), primary_key=True)
+    assignment_type_id = db.Column(db.String(15), ForeignKey('assignment_types.id'), primary_key=True)
     weight = db.Column(db.Float, nullable=False)
 
     assignment_type = db.relationship('AssignmentType', back_populates='assignment_weights')
@@ -165,9 +165,9 @@ class AssignmentWeight(db.Model):
 class Assignment(db.Model):
     __tablename__ = 'assignments'
 
-    id = db.Column(db.String(20), primary_key=True)
-    class_id = db.Column(db.String(20), ForeignKey('class_sections.id'), nullable=False)
-    assignment_type_id = db.Column(db.Integer, ForeignKey('assignment_types.id'), nullable=False)
+    id = db.Column(db.String(15), primary_key=True)
+    class_id = db.Column(db.String(15), ForeignKey('class_sections.id'), nullable=False)
+    assignment_type_id = db.Column(db.String(15), ForeignKey('assignment_types.id'), nullable=False)
 
     assignment_type = db.relationship('AssignmentType', back_populates='assignments')
     class_section = db.relationship('ClassSection', back_populates='assignments')
