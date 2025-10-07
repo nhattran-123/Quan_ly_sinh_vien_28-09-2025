@@ -1,0 +1,58 @@
+<!--thử ngay 07/10/2025-->
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Trang tài khoản</title>
+        <link rel="stylesheet" href="../static/style.css">
+    </head>
+    <body class="index-box">
+        
+        <!-- Form đăng nhập. ('hidden' là ẩn) -->
+        <form id="loginForm" class="log-box hidden">
+            <h2>Đăng nhập</h2>
+            <label>Tên đăng nhập:
+                <input type="text" id="ten" required/>
+            </label>
+            <label>Mật khẩu:
+                <input type="password" id="mk" required/>
+            </label>
+            <button type="submit">Đăng nhập</button>
+        </form>
+        <!-- Form quên mật khẩu -->
+        <form id="forgotForm" class="log-box hidden">
+            <h2>Quên mật khẩu</h2>
+            <label>Email:
+                <input type="email" id="email" required/>
+            </label>
+            <label>Mật khẩu mới:
+                <input type="password" id="f-newP" required/>
+            </label>
+            <label>Xác nhận mật khẩu mới:
+                <input type="password" id="f-xacnhan" required/>
+            </label>
+            <button type="submit">Cập nhật</button>
+            <!--
+            <h2>Quên mật khẩu</h2>
+            <input type="text" id="forgotUser" placeholder="Tài khoản hoặc email" required>
+            <button type="submit">Gửi yêu cầu</button>
+            -->
+        </form>
+        <!-- Form đổi mật khẩu -->
+        <form id="resetForm" class="log-box hidden">
+            <h2>Đổi mật khẩu</h2>
+            <label>Mật khẩu hiện tại:
+            <input type="password" id="oldP" required/>
+            </label>
+            <label>Mật khẩu mới:
+                <input type="password" id="newP" required/>
+            </label>
+                <label>Xác nhận mật khẩu mới:
+                <input type="password" id="xacnhan" required/>
+            </label>
+            <button type="submit">Cập nhật</button>
+        </form>
+
+        <script src="../static/form.js"></script>
+    </body>
+</html>
