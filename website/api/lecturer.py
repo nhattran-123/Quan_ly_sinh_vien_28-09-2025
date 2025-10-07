@@ -1,8 +1,8 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from .. import db
-from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms
-#,Department,Exam,Grade
+from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms,Grade,Assignment,AssignmentType,AssignmentWeight
+#,Department,Exam
 # from datetime import date
 from .. import login_manager
 lecturer_bp=Blueprint('lecturer',__name__)
@@ -54,6 +54,7 @@ def classSections():
 
         list_class.append({
             "STT":dem,
+            "id":i.id,
             "coure": i.course_id,
             "lecturer_name":current_user.full_name,
             "name":course.name,
@@ -106,5 +107,121 @@ def list_student(class_id):
         return jsonify({"message": "Không có sinh viên nào trong lớp này hoặc ID lớp không hợp lệ."}), 404
     else:
         return jsonify(danh_sach)
-        
+@lecturer_bp.route("/grades/<class_id>", methods=["GET"])
+def get_class_grades(class_id):
+    # Lấy danh sách assignment (bài kiểm tra) của lớp
+    assignments = Assignment.query.filter_by(class_id=class_id).limit(3).all()
+
+    # Map tên loại điểm -> ID assignment
+    assignment_map = {}
+    for a in assignments:
+        assignment_map[a.assignment_type.name] = a.id
+
+    # Lấy danh sách sinh viên đăng ký lớp này
+    enrollments = Enrollment.query.filter_by(class_id=class_id).all()
+    result = []
+
+    for e in enrollments:
+        student = e.student_ref
+        grades = Grade.query.filter_by(enrollment_id=e.id).all()
+
+        # Tạo dict chứa 3 loại điểm mặc định rỗng
+        grade_data = {atype: "" for atype in assignment_map.keys()}
+
+        for g in grades:
+            atype = g.assignment.assignment_type.name
+            if atype in grade_data:  # chỉ cập nhật 3 loại điểm đầu tiên
+                grade_data[atype] = g.grade if g.grade is not None else ""
+
+        # Ghi chú nếu chưa nhập điểm nào
+        if all(v == "" for v in grade_data.values()):
+            note = "Chưa nhập điểm"
+        else:
+            note = ""
+
+        result.append({
+            "student_id": student.user_id,
+            "student_name": student.user.full_name,
+            **grade_data,
+            "note": note
+        })
+
+    return jsonify(result)
+@lecturer_bp.route("/grades/<class_id>", methods=["POST"])
+@login_required
+def update_class_grades(class_id):
+    # 1. KIỂM TRA PHÂN QUYỀN VÀ LỚP HỌC 
+    
+    # a. Kiểm tra vai trò
+    if current_user.role != 'lecturer':
+        return jsonify({"error": "Không thành công", "message": "Bạn không phải là giảng viên"}), 403
+
+    # b. Kiểm tra tồn tại và quyền sở hữu lớp
+    class_section = ClassSection.query.get(class_id)
+    if not class_section:
+        return jsonify({"error": "Lỗi", "message": "Không tìm thấy lớp học."}), 404
+
+    if class_section.lecturer_id != current_user.id:
+        return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
+
+    # Lấy dữ liệu từ request
+    data = request.get_json()
+    grade_list = data if isinstance(data, list) else data.get("grades", [])
+
+    # Lấy 3 assignment đầu tiên của lớp
+    assignments = Assignment.query.filter_by(class_id=class_id).limit(3).all()
+    assignment_map = {a.assignment_type.name: a.id for a in assignments}
+
+    for g in grade_list:
+        student_id = g.get("student_id")
+
+        # Tìm enrollment tương ứng
+        enrollment = Enrollment.query.filter_by(student_id=student_id, class_id=class_id).first()
+        if not enrollment:
+            print(f"Bỏ qua: Sinh viên {student_id} không đăng ký lớp {class_id}")
+            continue
+
+        # Duyệt qua 3 loại điểm
+        for key, assignment_id in assignment_map.items():
+            raw_score = g.get(key)
+            
+            # Xử lý trường hợp không nhập điểm (chuỗi rỗng, None)
+            if raw_score == "" or raw_score is None:
+                continue
+
+            try:
+                score = float(raw_score)
+            except ValueError:
+                # Trả về lỗi nếu điểm không phải là số
+                db.session.rollback()
+                return jsonify({
+                    "error": "Lỗi định dạng",
+                    "message": f"Điểm '{key}' của sinh viên {student_id} phải là số."
+                }), 400
+
+            # Kiểm tra phạm vi điểm (ví dụ: từ 0 đến 10)
+            if not (0 <= score <= 10):
+                db.session.rollback()
+                return jsonify({
+                    "error": "Lỗi giá trị",
+                    "message": f"Điểm '{key}' của sinh viên {student_id} phải nằm trong khoảng 0-10."
+                }), 400
+
+            # 2. THỰC HIỆN CẬP NHẬT/TẠO MỚI GRADE
+            grade = Grade.query.filter_by(enrollment_id=enrollment.id, assignment_id=assignment_id).first()
+            if not grade:
+                grade = Grade(enrollment_id=enrollment.id, assignment_id=assignment_id, grade=score)
+                db.session.add(grade)
+            else:
+                grade.grade = score
+
+    # 3. COMMIT DỮ LIỆU
+    try:
+        db.session.commit()
+        return jsonify({"message": "Cập nhật điểm cho lớp thành công!"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Lỗi hệ thống", "message": str(e)}), 500
+
+
 
