@@ -185,7 +185,7 @@ def seed_other_data():
     assignment_weights = []
     for section in class_sections:
         assignment_weights.append(AssignmentWeight(class_id=section.id, assignment_type_id = "CC", weight=1.0))
-        assignment_weights.append(AssignmentWeight(class_id=section.id, assignment_type_id="TH", weight=2.0))
+        assignment_weights.append(AssignmentWeight(class_id=section.id, assignment_type_id="KT1", weight=2.0))
         assignment_weights.append(AssignmentWeight(class_id=section.id, assignment_type_id="CK", weight=7.0))
 
     data_to_add.extend(assignment_weights)
@@ -195,7 +195,7 @@ def seed_other_data():
     assignments = []
     for section in class_sections:
         assignments.append(Assignment(id=section.id+".CC",class_id=section.id, assignment_type_id="CC"))
-        assignments.append(Assignment(id=section.id+".TH",class_id=section.id, assignment_type_id="TH"))
+        assignments.append(Assignment(id=section.id+".KT1",class_id=section.id, assignment_type_id="KT1"))
         assignments.append(Assignment(id=section.id+".CK",class_id=section.id, assignment_type_id="CK"))
 
     data_to_add.extend(assignments)
@@ -219,7 +219,7 @@ def seed_other_data():
             ))
             enrollment_id_counter += 1
             grades.append(Grade(enrollment_id=enrollment_id, assignment_id=class_id+".CC", grade=None))
-            grades.append(Grade(enrollment_id=enrollment_id, assignment_id=class_id+".TH", grade=None))
+            grades.append(Grade(enrollment_id=enrollment_id, assignment_id=class_id+".KT1", grade=None))
             grades.append(Grade(enrollment_id=enrollment_id, assignment_id=class_id+".CK", grade=None))
 
     data_to_add.extend(enrollments)
