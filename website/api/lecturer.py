@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify
 from flask_login import login_required, current_user
 from .. import db
-from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms
-#,Department,Exam,Grade
+from ..models import Lecturer,User,ClassSection,Enrollment,Student
+#,Department,Exam,Grade,Course,Terms,Room
 # from datetime import date
 from .. import login_manager
 lecturer_bp=Blueprint('lecturer',__name__)
@@ -26,7 +26,7 @@ def userinfor():
     user_data={
         "id": current_user.id,
         "fullname":current_user.full_name,
-        "birthday": current_user.date_of_birth.strftime("%d-%m-%Y") if current_user.date_of_birth else None,
+        "birthday": current_user.date_of_birth.strftime("%Y-%m-%d") if current_user.date_of_birth else None,
         "email":current_user.email,
         "role": current_user.role,   
     }
@@ -44,29 +44,18 @@ def userinfor():
 @lecturer_bp.route("/classSections",methods=["GET"])
 @login_required
 def classSections():
-    dem=1
     lecturer_classs=ClassSection.query.filter(ClassSection.lecturer_id==current_user.id).all()
-    list_class=[]
+    list_class={}
     for i in lecturer_classs:
-        room=Room.query.filter(Room.id==i.room_id).first()
-        vtri_phong=room.name+" "+ room.location
-        course=Course.query.filter(Course.id==i.course_id).first()
-
-        list_class.append({
-            "STT":dem,
+        list_class[i.id]={
             "coure": i.course_id,
-            "lecturer_name":current_user.full_name,
-            "name":course.name,
-            "credit":course.credits,
-            "theory_hours":course.theory_hours,
-            "practice_hours":course.practice_hours,
-            "room":vtri_phong,
+            "term": i.term_id,
+            "room":i.room_id,
             "max_students":i.max_students,
             "schedule":i.schedule,
-            "start_date":i.start_date.strftime("%d-%m-%Y"),
-            "end_date":i.end_date.strftime("%d-%m-%Y")
-        })
-        dem+=1
+            "start_date":i.start_date.strftime("%Y-%m-%d"),
+            "end_date":i.end_date.strftime("%Y-%m-%d")
+        }
     if not list_class:
         return jsonify("Không có phụ trách lớp nào"), 200
     else:
@@ -91,7 +80,7 @@ def list_student(class_id):
     
     for student_id, full_name, date_of_birth, email in students_in_class:
         # Kiểm tra và định dạng ngày sinh
-        birth_day_str = date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None
+        birth_day_str = date_of_birth.strftime("%Y-%m-%d") if date_of_birth else None
 
         # Sử dụng 'dem' làm key thay vì luôn là '1'
         danh_sach.append({

@@ -112,8 +112,6 @@ class ClassSection(db.Model):
     checkin_duration_minutes = db.Column(db.Integer, default=15, nullable=False) 
     
     # Mối quan hệ đã thêm (để truy vấn dễ hơn)
-    assignments = db.relationship('Assignment', back_populates='class_section', lazy=True)
-    assignment_weights = db.relationship('AssignmentWeight', back_populates='class_section', lazy=True)
     course = db.relationship('Course', backref='sections') 
     term = db.relationship('Terms', backref='sections')
     room = db.relationship('Room', backref='sections')
@@ -124,12 +122,9 @@ class Enrollment(db.Model):
     student_id = db.Column(db.String(15), db.ForeignKey('students.user_id'), nullable=False)
     class_id = db.Column(db.String(15), db.ForeignKey('class_sections.id'), nullable=False)
     status = db.Column(db.Boolean, nullable=False)
-    final_grade = db.Column(db.Float, nullable=True)
-    letter_grade = db.Column(db.String(5), nullable=True)
-
+    
     # Đã thêm: Lấy thông tin ClassSection từ bản ghi Enrollment
-    class_section = db.relationship('ClassSection', backref='enrollments')
-    grades = db.relationship('Grade', back_populates='enrollment', lazy=True)
+    class_section = db.relationship('ClassSection', backref='enrollments') 
 
 
 class Attendance(db.Model):
@@ -143,41 +138,27 @@ class Attendance(db.Model):
     enrollment = db.relationship('Enrollment', backref='attendances')
 
 
-class AssignmentType(db.Model):
-    __tablename__ = 'assignment_types'
-    id = db.Column(db.String(50), primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
+class Exam(db.Model):
+    __tablename__ = 'exams'
+    id = db.Column(db.String(15), primary_key=True)
+    class_id = db.Column(db.String(15), db.ForeignKey('class_sections.id'), nullable=False)
+    name = db.Column(db.String(300), nullable=False)
+    max_score = db.Column(Numeric(8, 2))
+    weight = db.Column(Numeric(5, 2))
+    
+    # Đã thêm: Lấy thông tin ClassSection từ bản ghi Exam
+    class_section = db.relationship('ClassSection', backref='exams')
 
-    assignments = db.relationship('Assignment', back_populates='assignment_type', lazy=True)
-    assignment_weights = db.relationship('AssignmentWeight', back_populates='assignment_type', lazy=True)
-
-
-class AssignmentWeight(db.Model):
-    __tablename__ = 'assignment_weights'
-    class_id = db.Column(db.String(15), ForeignKey('class_sections.id'), primary_key=True)
-    assignment_type_id = db.Column(db.Integer, ForeignKey('assignment_types.id'), primary_key=True)
-    weight = db.Column(db.Float, nullable=False)
-
-    assignment_type = db.relationship('AssignmentType', back_populates='assignment_weights')
-    class_section = db.relationship('ClassSection', back_populates='assignment_weights')
-
-
-class Assignment(db.Model):
-    __tablename__ = 'assignments'
-
-    id = db.Column(db.String(20), primary_key=True)
-    class_id = db.Column(db.String(20), ForeignKey('class_sections.id'), nullable=False)
-    assignment_type_id = db.Column(db.Integer, ForeignKey('assignment_types.id'), nullable=False)
-
-    assignment_type = db.relationship('AssignmentType', back_populates='assignments')
-    class_section = db.relationship('ClassSection', back_populates='assignments')
-    grades = db.relationship('Grade', back_populates='assignment', lazy=True)
 
 class Grade(db.Model):
     __tablename__ = 'grades'
-    enrollment_id = db.Column(db.String(15), db.ForeignKey('enrollments.id'), primary_key=True, nullable=False)
-    assignment_id = db.Column(db.String(15), db.ForeignKey('assignments.id'), primary_key=True, nullable=False)
-    grade = db.Column(db.Float, nullable=True)
+    id = db.Column(db.String(15), primary_key=True)
+    enrollment_id = db.Column(db.String(15), db.ForeignKey('enrollments.id'), nullable=False)
+    exam_id = db.Column(db.String(15), db.ForeignKey('exams.id'), nullable=False)
+    final_score = db.Column(db.Float, nullable=True)
+    letter_score = db.Column(db.String(2), nullable=False)
+    notes = db.Column(db.Text, nullable=True)
 
-    assignment = db.relationship('Assignment', back_populates='grades')
-    enrollment = db.relationship('Enrollment', back_populates='grades')
+    # Đã thêm: Lấy thông tin Enrollment và Exam từ bản ghi Grade
+    enrollment_ref = db.relationship('Enrollment', backref='grades')
+    exam_ref = db.relationship('Exam', backref='grades')

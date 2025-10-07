@@ -1,6 +1,6 @@
 from website import create_app, db
-from website.models import User, Lecturer, Student, Department, Terms, Room, Course, ClassSection, Enrollment, Assignment, \
-    Grade, Admin, AssignmentType, AssignmentWeight
+from website.models import User, Lecturer, Student, Department, Terms, Room, Course, ClassSection, Enrollment, Exam, \
+    Grade, Admin
 from datetime import date, datetime
 from random import choice, randint, sample
 
@@ -168,49 +168,16 @@ def seed_other_data():
     data_to_add.extend(class_sections)
     class_section_ids = [cs.id for cs in class_sections]
     print("10 classSections created")
-    
-    # Tao bang AssignmentTye
-    assignment_types = [
-        AssignmentType(id="CC", name="Chuyên cần"),
-        AssignmentType(id="TH", name="Thực hành"),
-        AssignmentType(id="BTL", name="Bài tập lớn"),
-        AssignmentType(id="KT1", name="Kiểm tra 1"),
-        AssignmentType(id="KT2", name="Kiểm tra 2"),
-        AssignmentType(id="CK", name="Cuối kì")
-    ]
-    data_to_add.extend(assignment_types)
-    print("assignment_types created")
 
-    # Tao bang AssignmentWeight
-    assignment_weights = []
-    for section in class_sections:
-        assignment_weights.append(AssignmentWeight(class_id=section.id, assignment_type_id = "CC", weight=1.0))
-        assignment_weights.append(AssignmentWeight(class_id=section.id, assignment_type_id="KT1", weight=2.0))
-        assignment_weights.append(AssignmentWeight(class_id=section.id, assignment_type_id="CK", weight=7.0))
-
-    data_to_add.extend(assignment_weights)
-    print("assignment_weights created")
-
-    # Tao bang Assignment
-    assignments = []
-    for section in class_sections:
-        assignments.append(Assignment(id=section.id+".CC",class_id=section.id, assignment_type_id="CC"))
-        assignments.append(Assignment(id=section.id+".KT1",class_id=section.id, assignment_type_id="KT1"))
-        assignments.append(Assignment(id=section.id+".CK",class_id=section.id, assignment_type_id="CK"))
-
-    data_to_add.extend(assignments)
-    print("assignments created")
-
-    # Tao bang dang ki lop hoc kem diem - Enrollment & Grade
+    # Tao bang dang ki lop hoc - Enrollment
     enrollments = []
-    grades = []
     enrollment_id_counter = 1
-    slots = {c: 40 for c in class_section_ids}
+    slots = {c:40 for c in class_section_ids}
 
     for student_id in all_student_ids:
         available_class_ids = [c for c in class_section_ids if slots[c] > 0]
         classes_for_student = sample(available_class_ids, 3)
-
+        
         for class_id in classes_for_student:
             slots[class_id] -= 1
             enrollment_id = f"E{enrollment_id_counter:04d}"
@@ -218,14 +185,42 @@ def seed_other_data():
                 id=enrollment_id, student_id=student_id, class_id=class_id, status=True
             ))
             enrollment_id_counter += 1
-            grades.append(Grade(enrollment_id=enrollment_id, assignment_id=class_id+".CC", grade=None))
-            grades.append(Grade(enrollment_id=enrollment_id, assignment_id=class_id+".KT1", grade=None))
-            grades.append(Grade(enrollment_id=enrollment_id, assignment_id=class_id+".CK", grade=None))
-
+            
     data_to_add.extend(enrollments)
-    data_to_add.extend(grades)
-    print("enrollments and grades created")
+    print("enrollments created")
+    
+    
+    # Tao bang Exam va Grade trống
+    exams = []
+    grades = []
+    grade_id_counter = 1
+    
+    for cls in class_sections:
+        exam_mid = Exam(id=f"EXM{cls.id}M", class_id=cls.id, name="Giữa kỳ (40%)", max_score=10, weight=40)
+        exam_final = Exam(id=f"EXM{cls.id}F", class_id=cls.id, name="Cuối kỳ (60%)", max_score=10, weight=60)
+        exams.extend([exam_mid, exam_final])
+        
+        # Lấy tất cả các enrollment của lớp này
+        class_enrollments = [e for e in enrollments if e.class_id == cls.id]
+        
+        for enrollment in class_enrollments:
+            # TẠO BẢN GHI GRADE TRỐNG CHO ĐIỂM GIỮA KỲ
+            grades.append(Grade(
+                id=f"G{grade_id_counter:06d}", enrollment_id=enrollment.id, exam_id=exam_mid.id, 
+                final_score=0.0, letter_score="", notes="Chờ nhập điểm"
+            ))
+            grade_id_counter += 1
+            
+            # TẠO BẢN GHI GRADE TRỐNG CHO ĐIỂM CUỐI KỲ
+            grades.append(Grade(
+                id=f"G{grade_id_counter:06d}", enrollment_id=enrollment.id, exam_id=exam_final.id, 
+                final_score=0.0, letter_score="", notes="Chờ nhập điểm"
+            ))
+            grade_id_counter += 1
 
+    data_to_add.extend(exams)
+    data_to_add.extend(grades)
+    print("exams created")
 
 # Ham main -------------------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -241,7 +236,7 @@ if __name__ == '__main__':
             db.session.add_all(data_to_add)
 
             db.session.commit()
-            print("Đã khởi tạo thành công toàn bộ dữ liệu mẫu (150 SV, chỉ HK 20241).")
+            print("Đã khởi tạo thành công toàn bộ dữ liệu mẫu (100 SV, chỉ HK 20241).")
 
         except Exception as e:
             db.session.rollback()
