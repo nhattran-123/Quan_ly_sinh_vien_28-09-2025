@@ -2,6 +2,9 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from .. import db
 from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms,Grade,Assignment,AssignmentType,AssignmentWeight
+from flask import jsonify
+from collections import Counter
+import json
 #,Department,Exam
 # from datetime import date
 from .. import login_manager
@@ -20,6 +23,7 @@ lecturer_bp=Blueprint('lecturer',__name__)
         "student_id": "SV002"
         }
     ]
+    Lấy ra biết đồ tròn điểm :http://127.0.0.1:5000/api/lecturer/grades/distribution/<class_id>
 """
 
 @login_manager.user_loader
@@ -325,6 +329,60 @@ def calculate_letter_grade(final_score):
         return "D"
     else:
         return "F"
+# Import db, Enrollment, ClassSection (nếu cần)
 
+@lecturer_bp.route("/grades/distribution/<class_id>", methods=["GET"])
+def get_grade_distribution(class_id):
+    # 1. Lấy tất cả các bản ghi Enrollment cho lớp học này
+    enrollments = Enrollment.query.filter_by(class_id=class_id).all()
+
+    if not enrollments:
+        return jsonify({"message": "Không tìm thấy sinh viên nào đăng ký lớp học này."}), 404
+
+    # 2. Lấy danh sách tất cả các điểm chữ
+    # Chú ý: Sử dụng letter_grade đã được lưu trong DB (đã tính toán ở chức năng trước)
+    letter_grades = [
+        e.letter_grade 
+        for e in enrollments 
+        if e.letter_grade is not None # Loại bỏ các giá trị None, thường là khi chưa tính toán
+    ]
+
+    # 3. Đếm số lượng sinh viên cho mỗi loại điểm chữ
+    # Ví dụ: {'A': 5, 'B+': 10, 'F (Học lại)': 2, 'N/A': 3}
+    grade_counts = Counter(letter_grades)
+
+    # 4. Chuyển đổi dữ liệu sang định dạng phù hợp cho biểu đồ tròn (ví dụ: list of objects)
+    # Đây là định dạng phổ biến, dễ dùng cho frontend
+    chart_data = []
+    
+    # Định nghĩa màu sắc cố định cho các loại điểm để frontend dễ dàng map
+    color_map = {
+        "A": "#4CAF50",      # Green (Tốt)
+        "B+": "#8BC34A",     # Light Green
+        "B": "#CDDC39",      # Lime
+        "C+": "#FFEB3B",     # Yellow (Trung bình)
+        "C": "#FFC107",      # Amber
+        "D+": "#FF9800",     # Orange
+        "D": "#FF5722",      # Deep Orange
+        "F": "#F44336",      # Red (Rớt)
+        "N/A": "#9E9E9E",    # Grey (Chưa có điểm)
+    }
+
+    total_students = len(letter_grades)
+    
+    for grade, count in grade_counts.items():
+        chart_data.append({
+            "name": grade,
+            "value": count,
+            "percentage": round((count / total_students) * 100, 1),
+            "color": color_map.get(grade, "#B0BEC5") # Lấy màu theo grade, mặc định là Grey nhạt
+        })
+
+    # 5. Trả về JSON
+    return jsonify({
+        "class_id": class_id,
+        "total_students": total_students,
+        "distribution": chart_data
+    })
 
 
