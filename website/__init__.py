@@ -1,3 +1,5 @@
+import urllib
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -5,11 +7,12 @@ from os import path
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Qlsv.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pyodbc://LAPTOP-O77S1IR8\SQLEXPRESS/Qlsv?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
     app.config['SECRET_KEY'] = "quanlysinhvien2025"  # ← Thêm dòng này
     
     db.init_app(app)
@@ -23,9 +26,8 @@ def create_app():
     # from .api.admin import admin_bp
 
     with app.app_context():
-        if not path.exists(path.join(app.root_path, 'Qlsv.db')):
-            db.create_all()
-            print('Database Created')
+        db.create_all()
+        print('Database Created')
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     # app.register_blueprint(student_bp, url_prefix="/api/student")

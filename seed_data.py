@@ -1,7 +1,7 @@
 from website import create_app, db
 from website.models import User, Lecturer, Student, Department, Terms, Room, Course, ClassSection, Enrollment, Assignment, \
     Grade, Admin, AssignmentType, AssignmentWeight
-from datetime import date, datetime
+from datetime import datetime
 from random import choice, randint, sample
 
 
@@ -32,10 +32,10 @@ departments_data = []
 department_ids = ["CNTT1", "ATTT", "DPT", "TCKT"]
 
 def seed_department():
-    departments_data.append(Department(id="CNNT1", name="Khoa công nghệ thông tin 1"))
-    departments_data.append(Department(id="ATTT", name="Khoa an toàn thông tin"))
-    departments_data.append(Department(id="DPT", name="Khoa đa phương tiện"))
-    departments_data.append(Department(id="TCKT", name="Khoa tài chính kế toán"))
+    departments_data.append(Department(id=department_ids[0], name="Khoa công nghệ thông tin 1"))
+    departments_data.append(Department(id=department_ids[1], name="Khoa an toàn thông tin"))
+    departments_data.append(Department(id=department_ids[2], name="Khoa đa phương tiện"))
+    departments_data.append(Department(id=department_ids[3], name="Khoa tài chính kế toán"))
 
     data_to_add.extend(departments_data)
     print("4 departments added")
@@ -55,7 +55,7 @@ def seed_student():
         full_name = f"{choice(last_names)} {choice(['Văn', 'Thị', 'Đức', 'Thu'])} {first_name}"
 
         birth_year = randint(2004, 2006)
-        date_of_birth = date(birth_year, randint(1, 12), randint(1, 28))
+        date_of_birth = datetime(birth_year, randint(1, 12), randint(1, 28))
 
         dept_id = choice(department_ids)
         entry_year = 2024
@@ -85,7 +85,7 @@ def seed_lecturer():
         full_name = f"{choice(last_names)} {choice(['Văn', 'Thị', 'Đức', 'Thu'])} {first_name}"
 
         birth_year = randint(1970, 2000)
-        date_of_birth = date(birth_year, randint(1, 12), randint(1, 28))
+        date_of_birth = datetime(birth_year, randint(1, 12), randint(1, 28))
 
         dept_id = choice(department_ids)
 
@@ -124,12 +124,12 @@ def seed_other_data():
     
     # Tao 6 khoa hoc
     courses = [
-        Course(id="IT101", department_id="CNTT1", name="Nhập môn Lập trình C", credits=3, theory_hours=45, practice_hours=0, description="Cơ bản về ngôn ngữ C."),
-        Course(id="IT102", department_id="CNTT1", name="Toán Cao cấp A1", credits=3, theory_hours=45, practice_hours=0, description="Đại số tuyến tính và Hình học giải tích."),
-        Course(id="KVT103", department_id="KVT1", name="Vật lý Đại cương", credits=3, theory_hours=30, practice_hours=15, description="Cơ học và Nhiệt học."),
-        Course(id="QT201", department_id="QTKT1", name="Kinh tế Chính trị Mác-Lênin", credits=3, theory_hours=45, practice_hours=0, description="Nguyên lý cơ bản."),
-        Course(id="AT202", department_id="ATTT", name="Tin học Đại cương", credits=2, theory_hours=30, practice_hours=0, description="Cơ bản về máy tính và Internet."),
-        Course(id="TC301", department_id="TCKT", name="Tiếng Anh 1", credits=3, theory_hours=45, practice_hours=0, description="Ngữ pháp và từ vựng cơ bản."),
+        Course(id="IT101", department_id=department_ids[0], name="Nhập môn Lập trình C", credits=3, theory_hours=45, practice_hours=0, description="Cơ bản về ngôn ngữ C."),
+        Course(id="IT102", department_id=department_ids[0], name="Toán Cao cấp A1", credits=3, theory_hours=45, practice_hours=0, description="Đại số tuyến tính và Hình học giải tích."),
+        Course(id="KVT103", department_id=department_ids[1], name="Vật lý Đại cương", credits=3, theory_hours=30, practice_hours=15, description="Cơ học và Nhiệt học."),
+        Course(id="QT201", department_id=department_ids[3], name="Kinh tế Chính trị Mác-Lênin", credits=3, theory_hours=45, practice_hours=0, description="Nguyên lý cơ bản."),
+        Course(id="AT202", department_id=department_ids[1], name="Tin học Đại cương", credits=2, theory_hours=30, practice_hours=0, description="Cơ bản về máy tính và Internet."),
+        Course(id="TC301", department_id=department_ids[2], name="Tiếng Anh 1", credits=3, theory_hours=45, practice_hours=0, description="Ngữ pháp và từ vựng cơ bản."),
     ]
     data_to_add.extend(courses)
     course_ids = [c.id for c in courses]
@@ -230,10 +230,19 @@ def seed_other_data():
 # Ham main -------------------------------------------------------------------------------------
 if __name__ == '__main__':
     with app.app_context():
+
         try:
             print("--- BẮT ĐẦU SEED DỮ LIỆU MẪU (100 SV, HK 20241, GRADE TRỐNG) ---")
             seed_admin()
             seed_department()
+
+            db.session.add_all(data_to_add)
+            db.session.commit()
+
+            print("admin and department commit successfully")
+
+            data_to_add = []
+
             seed_student()
             seed_lecturer()
             seed_other_data()

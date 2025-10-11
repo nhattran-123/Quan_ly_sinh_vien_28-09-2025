@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, DateTime
+from sqlalchemy import ForeignKey, DateTime, UnicodeText
 from . import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -13,7 +13,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(300), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='', nullable=False)
-    full_name = db.Column(db.String(300), default='', nullable=False)
+    full_name = db.Column(UnicodeText(300), default='', nullable=False)
     date_of_birth = db.Column(DateTime(timezone=True), nullable=True)
 
     admin = db.relationship('Admin', uselist=False, back_populates='user')
@@ -38,7 +38,7 @@ class Lecturer(db.Model):
     __tablename__ = 'lecturers'
     user_id = db.Column(db.String(15), db.ForeignKey('users.id'), primary_key=True, nullable=False)
     department_id = db.Column(db.String(15), db.ForeignKey('departments.id'), nullable=True)
-    position = db.Column(db.String(100), nullable=False)
+    position = db.Column(UnicodeText(100), nullable=False)
 
     user = db.relationship('User', back_populates='lecturer')
     department = db.relationship('Department', back_populates='lecturers')
@@ -64,7 +64,7 @@ class Student(db.Model):
 class Department(db.Model):
     __tablename__ = 'departments'
     id = db.Column(db.String(15), primary_key=True, nullable=False)
-    name = db.Column(db.String(300), nullable=False)
+    name = db.Column(UnicodeText(300), nullable=False)
 
     lecturers = db.relationship('Lecturer', back_populates='department', lazy=True)
     courses = db.relationship('Course', backref='department', lazy=True)
@@ -72,21 +72,21 @@ class Department(db.Model):
 class Terms(db.Model):
     __tablename__ = 'terms'
     id = db.Column(db.String(15), primary_key=True)
-    name = db.Column(db.String(300), nullable=False)
+    name = db.Column(UnicodeText(300), nullable=False)
     start_date = db.Column(DateTime(timezone=True), nullable=False)
     end_date = db.Column(DateTime(timezone=True), nullable=False)
 
 class Room(db.Model):
     __tablename__ = 'rooms'
     id = db.Column(db.String(15), primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    location = db.Column(db.String(100), nullable=False)
+    name = db.Column(UnicodeText(100), nullable=False)
+    location = db.Column(UnicodeText(100), nullable=False)
 
 class Course(db.Model):
     __tablename__ = 'courses'
     id = db.Column(db.String(15), primary_key=True)
     department_id = db.Column(db.String(15), db.ForeignKey('departments.id'), nullable=False)
-    name = db.Column(db.String(300), nullable=False)
+    name = db.Column(UnicodeText(300), nullable=False)
     credits = db.Column(db.Integer, nullable=False)
     theory_hours = db.Column(db.Integer, nullable=False)
     practice_hours = db.Column(db.Integer, nullable=False)
@@ -146,7 +146,7 @@ class Attendance(db.Model):
 class AssignmentType(db.Model):
     __tablename__ = 'assignment_types'
     id = db.Column(db.String(15), primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
+    name = db.Column(UnicodeText(100), nullable=False, unique=True)
 
     assignments = db.relationship('Assignment', back_populates='assignment_type', lazy=True)
     assignment_weights = db.relationship('AssignmentWeight', back_populates='assignment_type', lazy=True)
