@@ -8,6 +8,7 @@ import json
 #,Department,Exam
 # from datetime import date
 from .. import login_manager
+
 lecturer_bp=Blueprint('lecturer',__name__)
 """
     Lấy thông tin giảng viên :http://127.0.0.1:5000/api/lecturer/userinfor
@@ -29,6 +30,90 @@ lecturer_bp=Blueprint('lecturer',__name__)
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
+
+# --- KHU VỰC HÀM TRỢ GIÚP TÍNH ĐIỂM ---
+
+def calculate_letter_grade(final_score):
+    """
+    Hàm chuyển đổi điểm số (0-10) sang điểm chữ.
+    """
+    if final_score is None:
+        return "N/A"
+    
+    # Giả định thang điểm 10
+    if final_score >= 9.0:
+        return "A"
+    elif final_score >= 8.0:
+        return "B+"
+    elif final_score >= 7.0:
+        return "B"
+    elif final_score >= 6.5:
+        return "C+"
+    elif final_score >= 5.5:
+        return "C"
+    elif final_score >= 5.0:
+        return "D+"
+    elif final_score >= 4.0:
+        return "D"
+    else:
+        return "F"
+
+def calculate_enrollment_final_grade(enrollment, weight_map):
+    """
+    Tính toán điểm cuối cùng (final_grade) và điểm chữ (letter_grade) cho một bản ghi Enrollment.
+    Hàm này không commit vào DB.
+    """
+    grades = Grade.query.filter_by(enrollment_id=enrollment.id).all()
+    
+    type_grades = {atype: [] for atype in weight_map.keys()}
+    final_grade = 0.0
+    total_weight = 0.0
+    has_zero_grade = False 
+
+    # 1. Phân loại điểm
+    for g in grades:
+        if g.assignment and g.assignment.assignment_type:
+            atype = g.assignment.assignment_type.name
+            if atype in type_grades and g.grade is not None:
+                type_grades[atype].append(g.grade)
+    
+    # 2. Tính điểm trung bình từng loại và tính điểm cuối cùng
+    for atype, weight in weight_map.items():
+        if atype in type_grades and type_grades[atype]:
+            avg_grade = sum(type_grades[atype]) / len(type_grades[atype])
+            
+            # Kiểm tra nếu có điểm trung bình thành phần là 0.0
+            if avg_grade == 0.0:
+                has_zero_grade = True
+            
+            final_grade += avg_grade * weight
+            total_weight += weight
+
+    letter_grade = "N/A"
+    final_grade_rounded = None
+    
+    if total_weight > 0:
+        final_grade_rounded = round(final_grade, 2)
+        letter_grade = calculate_letter_grade(final_grade_rounded)
+        
+        # LOGIC BỔ SUNG: Nếu có bất kỳ điểm 0 nào trong điểm thành phần, ghi đè thành 'F'
+        if has_zero_grade:
+             letter_grade = "F"
+             
+    elif not any(v for v in type_grades.values() if v):
+        # Chưa nhập bất kỳ điểm nào
+        final_grade_rounded = None
+        letter_grade = "N/A"
+    else:
+        # Trường hợp total_weight=0 nhưng có điểm (Lỗi cấu hình trọng số)
+        final_grade_rounded = None
+        letter_grade = "N/A"
+        
+    return final_grade_rounded, letter_grade
+
+
+# --- KHU VỰC ROUTES ---
+
 @lecturer_bp.route('/userinfor',methods=["GET"])
 @login_required
 def userinfor():
@@ -42,7 +127,7 @@ def userinfor():
         "fullname":current_user.full_name,
         "birthday": current_user.date_of_birth.strftime("%d-%m-%Y") if current_user.date_of_birth else None,
         "email":current_user.email,
-        "role": current_user.role,   
+        "role": current_user.role,  
     }
     Lecturer_infor=Lecturer.query.filter_by(user_id=current_user.id).first()
 
@@ -55,6 +140,7 @@ def userinfor():
     else:
         user_data["details"]={"error":"Lecturer details record missing"}
     return jsonify(user_data),200
+
 @lecturer_bp.route("/classSections",methods=["GET"])
 @login_required
 def classSections():
@@ -86,6 +172,7 @@ def classSections():
         return jsonify("Không có phụ trách lớp nào"), 200
     else:
         return jsonify(list_class), 200
+
 @lecturer_bp.route("/list_student/<class_id>", methods=["GET"])
 @login_required
 def list_student(class_id):
@@ -100,7 +187,7 @@ def list_student(class_id):
         Enrollment, Student.user_id == Enrollment.student_id 
     ).filter(
         Enrollment.class_id == class_id 
-    ).all() # Lấy tất cả kết quả
+    ).all()
     danh_sach = []
     dem = 1
     
@@ -108,7 +195,6 @@ def list_student(class_id):
         # Kiểm tra và định dạng ngày sinh
         birth_day_str = date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None
 
-        # Sử dụng 'dem' làm key thay vì luôn là '1'
         danh_sach.append({
             "STT":dem,
             "full_name": full_name,
@@ -121,6 +207,7 @@ def list_student(class_id):
         return jsonify({"message": "Không có sinh viên nào trong lớp này hoặc ID lớp không hợp lệ."}), 404
     else:
         return jsonify(danh_sach)
+
 
 @lecturer_bp.route("/grades/<class_id>", methods=["POST"])
 @login_required
@@ -143,9 +230,11 @@ def update_class_grades(class_id):
     data = request.get_json()
     grade_list = data if isinstance(data, list) else data.get("grades", [])
 
-    # Lấy 3 assignment đầu tiên của lớp
-    assignments = Assignment.query.filter_by(class_id=class_id).limit(3).all()
+    # Lấy thông tin assignment IDs
+    assignments = Assignment.query.filter_by(class_id=class_id).all()
     assignment_map = {a.assignment_type.name: a.id for a in assignments}
+    
+    updated_enrollments = [] # Danh sách các đối tượng enrollment cần tính lại điểm cuối cùng
 
     for g in grade_list:
         student_id = g.get("student_id")
@@ -155,12 +244,16 @@ def update_class_grades(class_id):
         if not enrollment:
             print(f"Bỏ qua: Sinh viên {student_id} không đăng ký lớp {class_id}")
             continue
+        
+        # Thêm vào danh sách cần tính lại điểm cuối cùng
+        if enrollment not in updated_enrollments:
+            updated_enrollments.append(enrollment)
 
-        # Duyệt qua 3 loại điểm
+        # Duyệt qua các loại điểm thô và cập nhật
         for key, assignment_id in assignment_map.items():
             raw_score = g.get(key)
             
-            # Xử lý trường hợp không nhập điểm (chuỗi rỗng, None)
+            # Xử lý trường hợp không nhập điểm
             if raw_score == "" or raw_score is None:
                 continue
 
@@ -174,7 +267,7 @@ def update_class_grades(class_id):
                     "message": f"Điểm '{key}' của sinh viên {student_id} phải là số."
                 }), 400
 
-            # Kiểm tra phạm vi điểm (ví dụ: từ 0 đến 10)
+            # Kiểm tra phạm vi điểm (0 đến 10)
             if not (0 <= score <= 10):
                 db.session.rollback()
                 return jsonify({
@@ -182,7 +275,7 @@ def update_class_grades(class_id):
                     "message": f"Điểm '{key}' của sinh viên {student_id} phải nằm trong khoảng 0-10."
                 }), 400
 
-            # 2. THỰC HIỆN CẬP NHẬT/TẠO MỚI GRADE
+            # 2. THỰC HIỆN CẬP NHẬT/TẠO MỚI GRADE (Điểm thô)
             grade = Grade.query.filter_by(enrollment_id=enrollment.id, assignment_id=assignment_id).first()
             if not grade:
                 grade = Grade(enrollment_id=enrollment.id, assignment_id=assignment_id, grade=score)
@@ -190,146 +283,83 @@ def update_class_grades(class_id):
             else:
                 grade.grade = score
 
-    # 3. COMMIT DỮ LIỆU
-    try:
-        db.session.commit()
-        return jsonify({"message": "Cập nhật điểm cho lớp thành công!"}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": "Lỗi hệ thống", "message": str(e)}), 500
-@lecturer_bp.route("/grades/<class_id>", methods=["GET"])
-def get_class_grades(class_id):
-    # 1. Lấy thông tin trọng số điểm của lớp học (AssignmentWeight)
+    # 3. TÍNH VÀ CẬP NHẬT ĐIỂM CUỐI CÙNG VÀO ENROLLMENT (final_grade, letter_grade)
     weights_query = AssignmentWeight.query.filter_by(class_id=class_id).all()
-    
-    # Chia trọng số (weight) cho 10 để chuyển từ số nguyên (1, 2, 7)
     weight_map = {w.assignment_type.name: w.weight / 10.0 for w in weights_query}
     
-    assignments = Assignment.query.filter_by(class_id=class_id).all()
-    assignment_map_by_type = {}
-    for a in assignments:
-        atype_name = a.assignment_type.name
-        if atype_name not in assignment_map_by_type:
-            assignment_map_by_type[atype_name] = []
-        assignment_map_by_type[atype_name].append(a.id)
+    try:
+        for e in updated_enrollments:
+            # TÍNH TOÁN ĐIỂM CUỐI CÙNG VÀ ĐIỂM CHỮ
+            final_grade, letter_grade = calculate_enrollment_final_grade(e, weight_map) 
+            
+            # Cập nhật Enrollment chỉ khi có thay đổi
+            if e.final_grade != final_grade or e.letter_grade != letter_grade:
+                e.final_grade = final_grade
+                e.letter_grade = letter_grade
+                db.session.add(e)
 
+        # 4. COMMIT DỮ LIỆU CẢ ĐIỂM THÔ VÀ ĐIỂM CUỐI CÙNG
+        db.session.commit()
+        return jsonify({"message": "Cập nhật điểm thô và tính toán/lưu điểm cuối cùng thành công!"}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Lỗi hệ thống khi tính điểm cuối cùng", "message": str(e)}), 500
+
+
+@lecturer_bp.route("/grades/<class_id>", methods=["GET"])
+# @login_required # Tùy chọn: nếu chỉ giảng viên mới được xem, hãy bật lại dòng này
+def get_class_grades(class_id):
+    """
+    Chỉ lấy ra (READ) các điểm thô, điểm trung bình thành phần và điểm cuối cùng (đã được tính và lưu trước đó).
+    """
+    
+    # 1. Lấy thông tin trọng số điểm của lớp học (Chỉ để biết các cột điểm cần hiển thị)
+    weights_query = AssignmentWeight.query.filter_by(class_id=class_id).all()
+    weight_map = {w.assignment_type.name: w.weight / 10.0 for w in weights_query}
+    
     # 2. Lấy danh sách sinh viên đăng ký lớp này
     enrollments = Enrollment.query.filter_by(class_id=class_id).all()
     result = []
-    
-    # Khởi tạo session cho việc commit
-    session_has_changes = False 
 
     for e in enrollments:
         student = e.student_ref
         grades = Grade.query.filter_by(enrollment_id=e.id).all()
         
+        # Khởi tạo dữ liệu điểm thành phần (sẽ hiển thị điểm trung bình)
         grade_data = {atype: "" for atype in weight_map.keys()}
-        type_grades = {atype: [] for atype in weight_map.keys()}
-        final_grade = 0.0
-        total_weight = 0.0
-        has_zero_grade = False 
-
-        # Phân loại và lưu trữ điểm theo từng loại assignment
+        type_grades_list = {atype: [] for atype in weight_map.keys()}
+        
+        # Phân loại điểm thô
         for g in grades:
             if g.assignment and g.assignment.assignment_type:
                 atype = g.assignment.assignment_type.name
-                if atype in type_grades and g.grade is not None:
-                    # Ghi nhận nếu có điểm 0 riêng lẻ
-                    if g.grade == 0.0:
-                        has_zero_grade = True
-                        
-                    type_grades[atype].append(g.grade)
-        
-        # Tính điểm trung bình cho từng loại và tính điểm cuối cùng (final_grade)
-        for atype, weight in weight_map.items():
-            if atype in type_grades and type_grades[atype]:
-                avg_grade = sum(type_grades[atype]) / len(type_grades[atype])
+                if atype in type_grades_list and g.grade is not None:
+                    type_grades_list[atype].append(g.grade)
+                    
+        # Tính điểm trung bình thành phần để hiển thị
+        for atype in weight_map.keys():
+             if type_grades_list[atype]:
+                avg_grade = sum(type_grades_list[atype]) / len(type_grades_list[atype])
                 grade_data[atype] = round(avg_grade, 2)
-
-                # Kiểm tra điểm trung bình thành phần bằng 0.0
-                if avg_grade == 0.0:
-                    has_zero_grade = True
-
-                final_grade += avg_grade * weight
-                total_weight += weight
-            else:
+             else:
                 grade_data[atype] = ""
 
-        # 3. Chuẩn hóa điểm cuối cùng và chuyển đổi sang điểm chữ (Letter Grade)
-        letter_grade = ""
-        
-        if total_weight > 0:
-            # Tính điểm chữ bình thường
-            final_grade_rounded = round(final_grade, 2)
-            letter_grade = calculate_letter_grade(final_grade_rounded)
+        # LẤY KẾT QUẢ ĐIỂM CUỐI CÙNG ĐÃ ĐƯỢC LƯU SẴN TỪ ENROLLMENT
+        final_grade_db = e.final_grade
+        letter_grade_db = e.letter_grade if e.letter_grade is not None else ""
             
-            # ⚠️ LOGIC BỔ SUNG: Nếu có bất kỳ điểm 0 nào, ghi đè thành 'F' (Học lại)
-            if has_zero_grade:
-                 letter_grade = "F"
-                 
-            # ⭐️ GHI ĐIỂM VÀO CƠ SỞ DỮ LIỆU
-            if e.final_grade != final_grade_rounded or e.letter_grade != letter_grade:
-                e.final_grade = final_grade_rounded
-                e.letter_grade = letter_grade
-                db.session.add(e)
-                session_has_changes = True # Đánh dấu có thay đổi
-            
-        elif not any(v for v in type_grades.values() if v):
-            # Chưa nhập bất kỳ điểm nào -> Đặt lại điểm trong DB
-            letter_grade = "N/A"
-            final_grade_rounded = None
-            
-            # ⭐️ GHI ĐIỂM VÀO CƠ SỞ DỮ LIỆU (Đặt là NULL/None)
-            if e.final_grade is not None or e.letter_grade != "N/A":
-                e.final_grade = None
-                e.letter_grade = "N/A"
-                db.session.add(e)
-                session_has_changes = True
-
-        else:
-            final_grade_rounded = None # Trường hợp total_weight=0 nhưng lại có điểm (Không hợp lý, nhưng đặt None)
-        
-        # 4. Cập nhật kết quả
+        # 3. Cập nhật kết quả
         result.append({
             "student_id": student.user_id,
             "student_name": student.user.full_name,
             **grade_data,
-            "final_grade": final_grade_rounded if final_grade_rounded is not None else "", 
-            "letter_grade": letter_grade
+            "final_grade": final_grade_db if final_grade_db is not None else "", 
+            "letter_grade": letter_grade_db
         })
     
-    # ⭐️ THỰC HIỆN COMMIT SAU KHI XỬ LÝ HẾT SINH VIÊN
-    if session_has_changes:
-        db.session.commit()
-
+    # 4. Trả về kết quả (KHÔNG CÓ COMMIT)
     return jsonify(result)
-
-def calculate_letter_grade(final_score):
-    """
-    Hàm giả định chuyển đổi điểm số (0-10) sang điểm chữ (A, B, C, D, F).
-    """
-    if final_score is None:
-        return "0"
-    
-    # Giả định thang điểm 10
-    if final_score >= 9.0:
-        return "A"
-    elif final_score >= 8.0:
-        return "B+"
-    elif final_score >= 7.0:
-        return "B"
-    elif final_score >= 6.5:
-        return "C+"
-    elif final_score >= 5.5:
-        return "C"
-    elif final_score >= 5.0:
-        return "D+"
-    elif final_score >= 4.0:
-        return "D"
-    else:
-        return "F"
-# Import db, Enrollment, ClassSection (nếu cần)
 
 @lecturer_bp.route("/grades/distribution/<class_id>", methods=["GET"])
 def get_grade_distribution(class_id):
@@ -339,23 +369,20 @@ def get_grade_distribution(class_id):
     if not enrollments:
         return jsonify({"message": "Không tìm thấy sinh viên nào đăng ký lớp học này."}), 404
 
-    # 2. Lấy danh sách tất cả các điểm chữ
-    # Chú ý: Sử dụng letter_grade đã được lưu trong DB (đã tính toán ở chức năng trước)
+    # 2. Lấy danh sách tất cả các điểm chữ đã được tính và lưu
     letter_grades = [
         e.letter_grade 
         for e in enrollments 
-        if e.letter_grade is not None # Loại bỏ các giá trị None, thường là khi chưa tính toán
+        if e.letter_grade is not None and e.letter_grade != "N/A" # Chỉ đếm các điểm đã được tính
     ]
 
     # 3. Đếm số lượng sinh viên cho mỗi loại điểm chữ
-    # Ví dụ: {'A': 5, 'B+': 10, 'F (Học lại)': 2, 'N/A': 3}
     grade_counts = Counter(letter_grades)
 
-    # 4. Chuyển đổi dữ liệu sang định dạng phù hợp cho biểu đồ tròn (ví dụ: list of objects)
-    # Đây là định dạng phổ biến, dễ dùng cho frontend
+    # 4. Chuyển đổi dữ liệu sang định dạng phù hợp cho biểu đồ tròn
     chart_data = []
     
-    # Định nghĩa màu sắc cố định cho các loại điểm để frontend dễ dàng map
+    # Định nghĩa màu sắc cố định cho các loại điểm
     color_map = {
         "A": "#4CAF50",      # Green (Tốt)
         "B+": "#8BC34A",     # Light Green
@@ -365,24 +392,21 @@ def get_grade_distribution(class_id):
         "D+": "#FF9800",     # Orange
         "D": "#FF5722",      # Deep Orange
         "F": "#F44336",      # Red (Rớt)
-        "N/A": "#9E9E9E",    # Grey (Chưa có điểm)
     }
 
-    total_students = len(letter_grades)
+    total_graded_students = len(letter_grades)
     
     for grade, count in grade_counts.items():
         chart_data.append({
             "name": grade,
             "value": count,
-            "percentage": round((count / total_students) * 100, 1),
-            "color": color_map.get(grade, "#B0BEC5") # Lấy màu theo grade, mặc định là Grey nhạt
+            "percentage": round((count / total_graded_students) * 100, 1) if total_graded_students > 0 else 0,
+            "color": color_map.get(grade, "#B0BEC5")
         })
 
     # 5. Trả về JSON
     return jsonify({
         "class_id": class_id,
-        "total_students": total_students,
+        "total_graded_students": total_graded_students,
         "distribution": chart_data
     })
-
-

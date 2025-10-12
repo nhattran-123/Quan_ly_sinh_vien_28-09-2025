@@ -1,5 +1,4 @@
 import urllib
-
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -10,10 +9,12 @@ login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pyodbc://LAPTOP-O77S1IR8\SQLEXPRESS/Qlsv?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'
+    # ĐÃ SỬA: Thêm 'r' vào trước chuỗi để xử lý các ký tự gạch chéo ngược (\) trong tên server MSSQL
+    # Điều này ngăn Python hiểu nhầm '\C' và '\S' là các ký tự thoát.
+    app.config['SQLALCHEMY_DATABASE_URI'] = r'mssql+pyodbc://NHATTRAN\CLCCSDLPTNHOM11/Qlsv?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = "quanlysinhvien2025"  # ← Thêm dòng này
+    app.config['SECRET_KEY'] = "quanlysinhvien2025" 
     
     db.init_app(app)
     login_manager.init_app(app)
