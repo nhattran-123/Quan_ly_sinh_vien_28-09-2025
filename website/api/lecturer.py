@@ -2,9 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from .. import db
 from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms,Grade,Assignment,AssignmentType,AssignmentWeight
-from flask import jsonify
 from collections import Counter
-import json
 #,Department,Exam
 # from datetime import date
 from .. import login_manager
@@ -144,6 +142,11 @@ def userinfor():
 @lecturer_bp.route("/classSections",methods=["GET"])
 @login_required
 def classSections():
+    if current_user.role!='lecturer':
+        return jsonify({
+            "error":"Không thành công",
+            "messager":"Bạn không phải là giảng viên"
+        }), 403
     dem=1
     lecturer_classs=ClassSection.query.filter(ClassSection.lecturer_id==current_user.id).all()
     list_class=[]
@@ -308,7 +311,7 @@ def update_class_grades(class_id):
 
 
 @lecturer_bp.route("/grades/<class_id>", methods=["GET"])
-# @login_required # Tùy chọn: nếu chỉ giảng viên mới được xem, hãy bật lại dòng này
+@login_required 
 def get_class_grades(class_id):
     """
     Chỉ lấy ra (READ) các điểm thô, điểm trung bình thành phần và điểm cuối cùng (đã được tính và lưu trước đó).
