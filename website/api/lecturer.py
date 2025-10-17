@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from flask_login import login_required, current_user
+from flask_login import fresh_login_required, current_user
 from .. import db
 from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms,Grade,Assignment,AssignmentType,AssignmentWeight
 from collections import Counter
@@ -113,7 +113,7 @@ def calculate_enrollment_final_grade(enrollment, weight_map):
 # --- KHU VỰC ROUTES ---
 
 @lecturer_bp.route('/userinfor',methods=["GET"])
-@login_required
+@fresh_login_required
 def userinfor():
     if current_user.role!='lecturer':
         return jsonify({
@@ -140,7 +140,7 @@ def userinfor():
     return jsonify(user_data),200
 
 @lecturer_bp.route("/classSections",methods=["GET"])
-@login_required
+@fresh_login_required
 def classSections():
     if current_user.role!='lecturer':
         return jsonify({
@@ -177,7 +177,7 @@ def classSections():
         return jsonify(list_class), 200
 
 @lecturer_bp.route("/list_student/<class_id>", methods=["GET"])
-@login_required
+@fresh_login_required
 def list_student(class_id):
     students_in_class = db.session.query(
         User.id, 
@@ -213,7 +213,7 @@ def list_student(class_id):
 
 
 @lecturer_bp.route("/grades/<class_id>", methods=["POST"])
-@login_required
+@fresh_login_required
 def update_class_grades(class_id):
     # 1. KIỂM TRA PHÂN QUYỀN VÀ LỚP HỌC 
     
@@ -311,7 +311,7 @@ def update_class_grades(class_id):
 
 
 @lecturer_bp.route("/grades/<class_id>", methods=["GET"])
-@login_required 
+@fresh_login_required 
 def get_class_grades(class_id):
     """
     Chỉ lấy ra (READ) các điểm thô, điểm trung bình thành phần và điểm cuối cùng (đã được tính và lưu trước đó).
@@ -365,6 +365,7 @@ def get_class_grades(class_id):
     return jsonify(result)
 
 @lecturer_bp.route("/grades/distribution/<class_id>", methods=["GET"])
+@fresh_login_required
 def get_grade_distribution(class_id):
     # 1. Lấy tất cả các bản ghi Enrollment cho lớp học này
     enrollments = Enrollment.query.filter_by(class_id=class_id).all()
