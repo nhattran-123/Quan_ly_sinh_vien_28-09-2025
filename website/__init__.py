@@ -7,7 +7,7 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///Qlsv.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pyodbc://127.0.0.1/Qlsv?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     app.config['SECRET_KEY'] = "quanlysinhvien2025"  # ← Thêm dòng này
@@ -27,7 +27,7 @@ def create_app():
             db.create_all()
             print('Database Created')
 
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(auth_bp, url_prefix="/")
     # app.register_blueprint(student_bp, url_prefix="/api/student")
     app.register_blueprint(lecturer_bp, url_prefix="/api/lecturer")
     # app.register_blueprint(admin_bp, url_prefix="/api/admin")

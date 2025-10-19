@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trang cá nhân</title>
+  <link rel="stylesheet" href="../../static/style.css">
+</head>
+<!--ngày 29/09/2025: chia bố cục trang 2 bên-->
+<main>
+  <article>
+    <h1>Sửa thông tin cá nhân</h1>
+    <!-- Hiển thị avatar mặc định -->
+    <img id="preview" src="https://via.placeholder.com/120" alt="Avatar" class="avatar" />
+    <!-- Input cho người dùng chọn ảnh -->
+    <input type="file" id="fileInput" accept="image/*" />
+    
+    <form>
+      Họ tên: <input type="text" value="Nguyễn Văn A" />
+      Mã SV: <input type="text" value="SV001" />
+      Email: <input type="email" value="a@example.com" />
+      <label>Ngành:
+        <input type="text" value="Công nghệ thông tin" />
+      </label>
+      <button type="submit">Lưu</button>
+    </form>
+  </article>
+
+  <aside>
+    <header>
+      <h1>Tính năng</h1>
+    </header>
+    <ul class="chuyen">
+      <li><a href="../index.html#resetForm" id="">Đổi mật khẩu</a></li>
+      <li><a href="trangChu.html">Trang chủ</a></li>
+      <li class="m1"><a href="newInfo.html">Cập nhập thông tin</a></li>
+      <li><a href="diem.html">Kết quả học tập</a></li>
+      <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
+      <li><a href="#" id="logoutBtn">Đăng xuất</a></li>
+    </ul>
+  </aside>
+</main>
+
+</html>
