@@ -6,6 +6,7 @@ from collections import Counter
 #,Department,Exam
 # from datetime import date
 from .. import login_manager
+import pandas as pd
 
 lecturer_bp=Blueprint('lecturer',__name__)
 """
@@ -23,7 +24,14 @@ lecturer_bp=Blueprint('lecturer',__name__)
         }
     ]
     Lấy ra biết đồ tròn điểm :http://127.0.0.1:5000/api/lecturer/grades/distribution/<class_id>
-"""
+    Cập nhật điểm cho 1 lớp bằng file excel: http://127.0.0.1:5000/api/lecturer/grades/upload-excel/<class_id>
+    file excel có dạng:
+    student_id|Chuyên cần|Kiểm tra 1|Cuối kì
+    SV001     |9         |8         |7.5
+    SV002     |10        |7.5       |8
+    SV003     |8.5       |8         |9
+    SV004     |0         |6         |5.5
+    """
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -361,7 +369,6 @@ def get_class_grades(class_id):
             "letter_grade": letter_grade_db
         })
     
-    # 4. Trả về kết quả (KHÔNG CÓ COMMIT)
     return jsonify(result)
 
 @lecturer_bp.route("/grades/distribution/<class_id>", methods=["GET"])
@@ -414,3 +421,85 @@ def get_grade_distribution(class_id):
         "total_graded_students": total_graded_students,
         "distribution": chart_data
     })
+@lecturer_bp.route("/grades/upload-excel/<class_id>",methods=["POST"])
+@fresh_login_required
+def upload_grades_excel(class_id):
+    if current_user.role != 'lecturer':
+        return jsonify({"error": "Không thành công", "message": "Bạn không phải là giảng viên"}), 403
+    class_section=ClassSection.query.get(class_id)
+    if not class_section:
+        return jsonify({"error":"Lỗi","message":"Không tìm thấy lớp học"}),404
+    if class_section.lecturer_id !=current_user.id:
+        return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
+    if 'file' not in request.files:
+        return jsonify({"error": "Lỗi", "message": "Không có file nào được tải lên."}), 400
+    file = request.files['file']
+    if file.filename=='':
+       return jsonify({"error": "Lỗi", "message": "Chưa chọn file để tải lên."}), 400 
+    if not file.filename.endswith(('.xlsx','.xls')):
+        return jsonify({"error": "Lỗi định dạng", "message": "Chỉ chấp nhận file Excel (.xlsx, .xls)."}), 400
+    try:
+        df=pd.read_excel(file)
+        grade_list= df.to_dict('records')
+    except Exception as e :
+        return jsonify({"error": "Lỗi đọc file", "message": f"Không thể đọc file Excel. Lỗi: {str(e)}"}), 400
+    if 'student_id' not in df.columns:
+        return jsonify({
+            "error": "Lỗi cột", 
+            "message": "File Excel phải có một cột tên là 'student_id' để định danh sinh viên."
+        }), 400
+    assignments=Assignment.query.filter_by(class_id=class_id).all()
+    assignment_map={a.assignment_type.name: a.id for a in assignments}
+    updated_enrollments=[]
+    for g in grade_list:
+        student_id=g.get("student_id")
+        if not student_id:
+            continue
+        enrollment=Enrollment.query.filter_by(student_id=student_id,class_id=class_id).first()
+        if not enrollment:
+            print(f"Bỏ qua: Sinh viên {student_id} không đăng ký lớp {class_id}")
+            continue
+        if enrollment not in updated_enrollments:
+            updated_enrollments.append(enrollment)
+        for assignment_name,assignment_id in assignment_map.items():
+            if assignment_name not in g or pd.isna(g[assignment_name]):
+                continue
+            raw_score =g.get(assignment_name)
+            try:
+                score = float(raw_score)
+            except (ValueError, TypeError):
+                db.session.rollback()
+                return jsonify({
+                    "error": "Lỗi định dạng",
+                    "message": f"Điểm '{assignment_name}' của sinh viên {student_id} phải là số."
+                }), 400
+            if not (0 <= score <= 10):
+                db.session.rollback()
+                return jsonify({
+                    "error": "Lỗi giá trị",
+                    "message": f"Điểm '{assignment_name}' của sinh viên {student_id} phải nằm trong khoảng 0-10."
+                }), 400
+            grade = Grade.query.filter_by(enrollment_id=enrollment.id,assignment_id=assignment_id).first()
+            if not grade:
+                grade = Grade(enrollment_id=enrollment.id, assignment_id=assignment_id, grade=score)
+                db.session.add(grade)
+            else:
+                grade.grade = score
+    weights_query=AssignmentWeight.query.filter_by(class_id=class_id).all()
+    weight_map={w.assignment_type.name: w.weight/10.0 for w in weights_query}
+    try:
+        for e in updated_enrollments:
+            final_grade, letter_grade = calculate_enrollment_final_grade(e, weight_map)
+            if e.final_grade != final_grade or e.letter_grade != letter_grade:
+                e.final_grade = final_grade
+                e.letter_grade = letter_grade
+                db.session.add(e)
+
+        # 7. COMMIT HOẶC ROLLBACK (Tái sử dụng)
+        db.session.commit()
+        return jsonify({"message": f"Cập nhật điểm thành công cho {len(updated_enrollments)} sinh viên từ file Excel!"}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Lỗi hệ thống khi tính điểm cuối cùng", "message": str(e)}), 500
+
