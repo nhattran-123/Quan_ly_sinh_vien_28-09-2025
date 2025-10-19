@@ -9,13 +9,13 @@
     <body class="index-box">
         
         <!-- Form đăng nhập. ('hidden' là ẩn) -->
-        <form id="loginForm" class="log-box hidden">
+        <form id="loginForm" class="log-box hidden" action="http://127.0.0.1:5000/api/auth/login" method="post">
             <h2>Đăng nhập</h2>
             <label>Tên đăng nhập:
-                <input type="text" id="ten" required/>
+                <input type="text" id="id" required/>
             </label>
             <label>Mật khẩu:
-                <input type="password" id="mk" required/>
+                <input type="password" id="password" required/>
             </label>
             <button type="submit">Đăng nhập</button>
         </form>

@@ -30,7 +30,7 @@ def userinfor():
         "full name":current_user.full_name,
     }
     return jsonify(user_data), 200
-@admin_bp.route('list_department',methods=["GET"])
+@admin_bp.route('/list_department',methods=["GET"])
 @fresh_login_required
 def list_department():
     if current_user.role!='admin':
@@ -41,4 +41,14 @@ def list_department():
     list_departments=[]
     for x in department:
         list_departments.append({"id":x.id,"name":x.name})
-    return jsonify(list_departments)
+    return jsonify(list_departments), 200
+@admin_bp.route('/add_department',methods=['GET'])
+@fresh_login_required
+def add_department():
+    if current_user.role!='admin':
+        return jsonify({"error":"Không thành công","message":"Bạn không có quyền truy cập"}), 403
+    data = request.get_json(silent=True) or request.form
+    department_list= data if isinstance(data,list) else data.get("departments",[])
+    if not department_list:
+        return jsonify({"error":"Lỗi","message":"Không có dữ liệu nào được gửi"}), 400
+    

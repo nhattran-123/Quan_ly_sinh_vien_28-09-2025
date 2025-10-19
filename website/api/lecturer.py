@@ -230,7 +230,7 @@ def update_class_grades(class_id):
         return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
 
     # Lấy dữ liệu từ request
-    data = request.get_json()
+    data = request.get_json(silent=True) or request.form
     grade_list = data if isinstance(data, list) else data.get("grades", [])
 
     # Lấy thông tin assignment IDs
