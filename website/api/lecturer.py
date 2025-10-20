@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request,send_file
 from flask_login import fresh_login_required, current_user
 from .. import db
+from io import BytesIO
 from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms,Grade,Assignment,AssignmentType,AssignmentWeight
 from collections import Counter
 #,Department,Exam
@@ -10,21 +11,20 @@ import pandas as pd
 
 lecturer_bp=Blueprint('lecturer',__name__)
 """
-    Lấy thông tin giảng viên :http://127.0.0.1:5000/api/lecturer/userinfor
-    Danh sách các lớp mà giảng viên giảng dạy:http://127.0.0.1:5000/api/lecturer/classSections
-    Danh sách sinh viên từng lớp:http://127.0.0.1:5000/api/lecturer/list_student/<class_id>
-    Danh sách điểm của sinh viên thuộc lớp nào đó : http://127.0.0.1:5000/api/lecturer/grades/<class_id> (Get là lấy ra điểm còn post sẽ là cập nhật điểm)
-    Nhập điểm bằng danh sách 1 list nhé kiểu như này 
-    [
-        {
-        "Chuyên cần": "8",
-        "Cuối kì": "9.5",
-        "Kiểm tra 1": "10",
-        "student_id": "SV002"
-        }
-    ]
-    Lấy ra biết đồ tròn điểm :http://127.0.0.1:5000/api/lecturer/grades/distribution/<class_id>
-    Cập nhật điểm cho 1 lớp bằng file excel: http://127.0.0.1:5000/api/lecturer/grades/upload-excel/<class_id>
+    -Lấy thông tin giảng viên :http://127.0.0.1:5000/api/lecturer/userinfor(GET)
+    -Danh sách các lớp mà giảng viên giảng dạy:http://127.0.0.1:5000/api/lecturer/classSections(GET)
+    -Danh sách sinh viên từng lớp:http://127.0.0.1:5000/api/lecturer/list_student/<class_id>(GET)
+    -Danh sách điểm của  cac sinh viên thuộc lớp  đó : http://127.0.0.1:5000/api/lecturer/grades/<class_id>(GET)
+    -Sửa điểm cho 1 sinh viên thuộc lớp đó:http://127.0.0.1:5000/api/lecturer/grades/<class_id>/<student_id>(PUT)
+   - Nhập điểm bằng kiểu như này , có thể chỉ sửa 1 điểm nào đó
+     {
+    "DIEM_CC": 9.5,
+    "DIEM_GK": 8.0,
+    "DIEM_CK": 7.5
+    }
+    -Lấy ra biết đồ tròn điểm :http://127.0.0.1:5000/api/lecturer/grades/distribution/<class_id>(GET)
+    -Lấy ra file excel Danh sách sinh viên lớp đó:http://127.0.0.1:5000/api/lecturer/list_student/export-excel/<class_id>(GET)
+    -Cập nhật điểm cho 1 lớp bằng file excel: http://127.0.0.1:5000/api/lecturer/grades/upload-excel/<class_id>(POST)
     file excel có dạng:
     student_id|Chuyên cần|Kiểm tra 1|Cuối kì
     SV001     |9         |8         |7.5
@@ -219,74 +219,60 @@ def list_student(class_id):
     else:
         return jsonify(danh_sach)
 
-
-@lecturer_bp.route("/grades/<class_id>", methods=["POST"])
+@lecturer_bp.route("/grades/<class_id>/<student_id>", methods=["PUT"]) 
 @fresh_login_required
-def update_class_grades(class_id):
-    # 1. KIỂM TRA PHÂN QUYỀN VÀ LỚP HỌC 
+def update_student_grade(class_id, student_id):
+    # 1. KIỂM TRA PHÂN QUYỀN VÀ DỮ LIỆU ĐẦU VÀO
     
-    # a. Kiểm tra vai trò
+    # a. Kiểm tra vai trò Giảng viên
     if current_user.role != 'lecturer':
         return jsonify({"error": "Không thành công", "message": "Bạn không phải là giảng viên"}), 403
 
-    # b. Kiểm tra tồn tại và quyền sở hữu lớp
+    # b. Kiểm tra lớp học có tồn tại và giảng viên có quyền phụ trách không
     class_section = ClassSection.query.get(class_id)
     if not class_section:
         return jsonify({"error": "Lỗi", "message": "Không tìm thấy lớp học."}), 404
-
     if class_section.lecturer_id != current_user.id:
         return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
 
-    # Lấy dữ liệu từ request
-    data = request.get_json(silent=True) or request.form
-    grade_list = data if isinstance(data, list) else data.get("grades", [])
+    # c. Kiểm tra sinh viên có thực sự đăng ký lớp học này không
+    enrollment = Enrollment.query.filter_by(student_id=student_id, class_id=class_id).first()
+    if not enrollment:
+        return jsonify({"error": "Lỗi", "message": f"Sinh viên {student_id} không có trong lớp học này."}), 404
 
-    # Lấy thông tin assignment IDs
+    # d. Lấy dữ liệu điểm từ request body
+    data = request.get_json(silent=True) or request.form
+    if not data:
+        return jsonify({"error": "Lỗi", "message": "Không có dữ liệu điểm được gửi lên."}), 400
+
+    # Lấy thông tin các cột điểm của lớp học
     assignments = Assignment.query.filter_by(class_id=class_id).all()
     assignment_map = {a.assignment_type.name: a.id for a in assignments}
     
-    updated_enrollments = [] # Danh sách các đối tượng enrollment cần tính lại điểm cuối cùng
-
-    for g in grade_list:
-        student_id = g.get("student_id")
-
-        # Tìm enrollment tương ứng
-        enrollment = Enrollment.query.filter_by(student_id=student_id, class_id=class_id).first()
-        if not enrollment:
-            print(f"Bỏ qua: Sinh viên {student_id} không đăng ký lớp {class_id}")
-            continue
-        
-        # Thêm vào danh sách cần tính lại điểm cuối cùng
-        if enrollment not in updated_enrollments:
-            updated_enrollments.append(enrollment)
-
-        # Duyệt qua các loại điểm thô và cập nhật
+    try:
+        # 2. CẬP NHẬT ĐIỂM THÀNH PHẦN (GRADE)
+        # Duyệt qua các loại điểm có trong lớp học
         for key, assignment_id in assignment_map.items():
-            raw_score = g.get(key)
+            # Lấy điểm thô từ dữ liệu gửi lên
+            raw_score = data.get(key)
             
-            # Xử lý trường hợp không nhập điểm
-            if raw_score == "" or raw_score is None:
+            # Bỏ qua nếu điểm này không được gửi lên trong request
+            if raw_score is None or raw_score == "":
                 continue
 
+            # Validate điểm phải là số và trong khoảng 0-10
             try:
                 score = float(raw_score)
-            except ValueError:
-                # Trả về lỗi nếu điểm không phải là số
+                if not (0 <= score <= 10):
+                    raise ValueError("Điểm phải nằm trong khoảng từ 0 đến 10.")
+            except (ValueError, TypeError):
                 db.session.rollback()
                 return jsonify({
-                    "error": "Lỗi định dạng",
-                    "message": f"Điểm '{key}' của sinh viên {student_id} phải là số."
+                    "error": "Lỗi dữ liệu",
+                    "message": f"Điểm '{key}' của sinh viên {student_id} không hợp lệ. Vui lòng nhập số từ 0-10."
                 }), 400
 
-            # Kiểm tra phạm vi điểm (0 đến 10)
-            if not (0 <= score <= 10):
-                db.session.rollback()
-                return jsonify({
-                    "error": "Lỗi giá trị",
-                    "message": f"Điểm '{key}' của sinh viên {student_id} phải nằm trong khoảng 0-10."
-                }), 400
-
-            # 2. THỰC HIỆN CẬP NHẬT/TẠO MỚI GRADE (Điểm thô)
+            # Tìm hoặc tạo mới bản ghi điểm thành phần
             grade = Grade.query.filter_by(enrollment_id=enrollment.id, assignment_id=assignment_id).first()
             if not grade:
                 grade = Grade(enrollment_id=enrollment.id, assignment_id=assignment_id, grade=score)
@@ -294,30 +280,22 @@ def update_class_grades(class_id):
             else:
                 grade.grade = score
 
-    # 3. TÍNH VÀ CẬP NHẬT ĐIỂM CUỐI CÙNG VÀO ENROLLMENT (final_grade, letter_grade)
-    weights_query = AssignmentWeight.query.filter_by(class_id=class_id).all()
-    weight_map = {w.assignment_type.name: w.weight / 10.0 for w in weights_query}
-    
-    try:
-        for e in updated_enrollments:
-            # TÍNH TOÁN ĐIỂM CUỐI CÙNG VÀ ĐIỂM CHỮ
-            final_grade, letter_grade = calculate_enrollment_final_grade(e, weight_map) 
-            
-            # Cập nhật Enrollment chỉ khi có thay đổi
-            if e.final_grade != final_grade or e.letter_grade != letter_grade:
-                e.final_grade = final_grade
-                e.letter_grade = letter_grade
-                db.session.add(e)
-
-        # 4. COMMIT DỮ LIỆU CẢ ĐIỂM THÔ VÀ ĐIỂM CUỐI CÙNG
+        # 3. TÍNH VÀ CẬP NHẬT ĐIỂM CUỐI CÙNG (ENROLLMENT)
+        weights_query = AssignmentWeight.query.filter_by(class_id=class_id).all()
+        weight_map = {w.assignment_type.name: w.weight / 10.0 for w in weights_query}
+        
+        final_grade, letter_grade = calculate_enrollment_final_grade(enrollment, weight_map) 
+        
+        enrollment.final_grade = final_grade
+        enrollment.letter_grade = letter_grade
+        
+        # 4. COMMIT TOÀN BỘ THAY ĐỔI
         db.session.commit()
-        return jsonify({"message": "Cập nhật điểm thô và tính toán/lưu điểm cuối cùng thành công!"}), 200
+        return jsonify({"message": f"Cập nhật điểm cho sinh viên {student_id} thành công!"}), 200
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "Lỗi hệ thống khi tính điểm cuối cùng", "message": str(e)}), 500
-
-
+        return jsonify({"error": "Lỗi hệ thống", "message": str(e)}), 500
 @lecturer_bp.route("/grades/<class_id>", methods=["GET"])
 @fresh_login_required 
 def get_class_grades(class_id):
@@ -502,4 +480,65 @@ def upload_grades_excel(class_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Lỗi hệ thống khi tính điểm cuối cùng", "message": str(e)}), 500
+@lecturer_bp.route("/list_student/export-excel/<class_id>", methods=["GET"])
+@fresh_login_required
+def export_student_list_excel(class_id):
+    """
+    API để xuất danh sách sinh viên của một lớp ra file Excel.
+    """
+    # --- BƯỚC 1: KIỂM TRA QUYỀN VÀ LỚP HỌC ---
+    if current_user.role != 'lecturer':
+        return jsonify({"error": "Không thành công", "message": "Bạn không phải là giảng viên"}), 403
+
+    class_section = ClassSection.query.get(class_id)
+    if not class_section:
+        return jsonify({"error": "Lỗi", "message": "Không tìm thấy lớp học."}), 404
+
+    if class_section.lecturer_id != current_user.id:
+        return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
+
+    # --- BƯỚC 2: TRUY VẤN DANH SÁCH SINH VIÊN (Sử dụng lại query từ API list_student) ---
+    students_in_class = db.session.query(
+        User.id, 
+        User.full_name, 
+        User.email,
+        User.date_of_birth
+    ).join(
+        Student, User.id == Student.user_id
+    ).join(
+        Enrollment, Student.user_id == Enrollment.student_id
+    ).filter(
+        Enrollment.class_id == class_id
+    ).order_by(User.id).all()
+
+    if not students_in_class:
+        return jsonify({"message": "Lớp học này chưa có sinh viên."}), 404
+
+    # --- BƯỚC 3: CHUẨN BỊ DỮ LIỆU CHO EXCEL ---
+    data_for_excel = []
+    for student_id, full_name, email, date_of_birth in students_in_class:
+        data_for_excel.append({
+            "ID": student_id,
+            "Họ và Tên": full_name,
+            "Email": email,
+            "Ngày Sinh": date_of_birth.strftime("%d-%m-%Y") if date_of_birth else ""
+        })
+    
+    # --- BƯỚC 4: TẠO VÀ GỬI FILE EXCEL ---
+    try:
+        df = pd.DataFrame(data_for_excel)
+        output_buffer = BytesIO()
+        df.to_excel(output_buffer, index=False)
+        output_buffer.seek(0)
+        
+        filename = f"Danh_sach_SV_Lop_{class_id}.xlsx"
+        
+        return send_file(
+            output_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        return jsonify({"error": "Lỗi hệ thống khi tạo file Excel", "message": str(e)}), 500
 
