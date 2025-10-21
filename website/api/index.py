@@ -5,10 +5,10 @@ from website.models import User
 from website import login_manager
 
 """
-Đăng nhập : POST http://127.0.0.1:5000/api/auth/login
-Đăng xuất : GET/POST http://127.0.0.1:5000/api/auth/logout
-Lấy thông tin current_user: GET http://127.0.0.1:5000/api/auth/current_user
-Đổi mật khẩu : POST http://127.0.0.1:5000/api/auth/set_password
+-Đăng nhập : POST http://127.0.0.1:5000/api/auth/login
+-Đăng xuất : GET/POST http://127.0.0.1:5000/api/auth/logout
+-Lấy thông tin current_user: GET http://127.0.0.1:5000/api/auth/current_user
+-Đổi mật khẩu : POST http://127.0.0.1:5000/api/auth/set_password
 """
 
 # Tạo blueprint cho module auth
