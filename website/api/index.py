@@ -1,8 +1,8 @@
-from flask import Blueprint, request, jsonify, session, make_response
+from flask import Blueprint, request, jsonify, session, make_response, render_template, redirect, url_for
 from flask_login import login_user, logout_user, login_required, current_user
-from .. import db
-from ..models import User
-from .. import login_manager
+from website import db
+from website.models import User
+from website import login_manager
 
 """
 -Đăng nhập : POST http://127.0.0.1:5000/api/auth/login
@@ -12,41 +12,43 @@ from .. import login_manager
 """
 
 # Tạo blueprint cho module auth
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth_bp', __name__)
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
 
 # ------------------- LOGIN -------------------
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/', methods=['GET','POST'])
 def login():
-    data = request.get_json(silent=True) or request.form
-    user_id = data.get("id")
-    password = data.get("password")
+    if request == 'POST':
+        data = request.get_json(silent=True) or request.form
+        user_id = data.get("id")
+        password = data.get("password")
 
-    if not user_id or not password:
-        return jsonify({"error": "ID và mật khẩu không được để trống"}), 400
+        if not user_id or not password:
+            return jsonify({"error": "ID và mật khẩu không được để trống"}), 400
 
-    user = User.query.get(user_id)
-    if not user or not user.check_password(password):
-        return jsonify({"error": "ID hoặc mật khẩu không đúng"}), 401
+        user = User.query.get(user_id)
+        if not user or not user.check_password(password):
+            return jsonify({"error": "ID hoặc mật khẩu không đúng"}), 401
 
-    # Đăng nhập và tạo session
-    login_user(user, remember=True)  # remember=True để lưu cookie lâu dài
-    session['user_id'] = user.id     # lưu user_id vào session
+        # Đăng nhập và tạo session
+        login_user(user, remember=True)  # remember=True để lưu cookie lâu dài
+        session['user_id'] = user.id     # lưu user_id vào session
 
-    resp = make_response(jsonify({
-        "message": "Đăng nhập thành công",
-        "user": user.id,
-        "full_name": user.full_name,
-        "role": user.role
-    }), 200)
+        resp = make_response(jsonify({
+            "message": "Đăng nhập thành công",
+            "user": user.id,
+            "full_name": user.full_name,
+            "role": user.role
+        }), 200)
 
-    # Đặt cookie (tùy chỉnh thêm, ví dụ 1h)
-    resp.set_cookie("user_id", user.id, max_age=900, httponly=True, samesite='Lax')
+        # Đặt cookie (tùy chỉnh thêm, ví dụ 1h)
+        resp.set_cookie("user_id", user.id, max_age=900, httponly=True, samesite='Lax')
+        return redirect(url_for("/lecturer"))
 
-    return resp
+    return render_template("/index.html")
 
 
 # ------------------- LOGOUT -------------------

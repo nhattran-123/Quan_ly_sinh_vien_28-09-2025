@@ -84,7 +84,7 @@ main aside{
     line-height: 1.5;/*khoảng cách dòng*/
     padding: 5px 0;
 }
-.m1 {
+.m1 { /* trang hiện tại */
     color: #ebb0b0;
     background-color: #ebb0b0;
 }

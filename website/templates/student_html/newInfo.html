@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Trang cá nhân</title>
+  <link rel="stylesheet" href="../../static/style.css">
+</head>
+<!--ngày 29/09/2025: chia bố cục trang 2 bên-->
+<body>
+  <main>
+    <article>
+      <h1>Sửa thông tin cá nhân</h1>
+      <!-- phần tử hiển thị ảnh (thẻ <img>). Hiển thị avatar mặc định. -->
+      <img id="preview" src="https://via.placeholder.com/120" alt="Avatar" class="avatar" />
+      <!-- Input cho người dùng chọn ảnh. Thuộc tính 'accept' thể hiện rằng chỉ chấp nhận các file dạng h.ả -->
+      <input type="file" id="fileInput" accept="image/*" />
+
+      <form>
+        <label for="name">Họ tên:</label>
+        <input type="text" id="name" value="" readonly />
+<!-- id="name" để truy xuất bằng JS; value="" để bạn đổ dữ liệu động từ SQL; readonly ➜ không cho người dùng sửa-->
+        <label for="maSV">Mã SV:</label>
+        <input type="text" id="maSV" value="" readonly />
+
+        <label for="mail">Email:</label>
+        <input type="email" id="mail" value="" />
+
+        <label for="nganh">Ngành:</label>
+        <input type="text" id="nganh" value="" readonly />
+
+        <label for="phone">Số điện thoại:</label>
+        <input type="tel" id="phone" value="" placeholder="Không bắt buộc">
+
+        <button type="submit">Lưu</button>
+      </form>
+
+    </article>
+
+    <aside>
+      <header>
+        <h1>Tính năng</h1>
+      </header>
+      <ul class="chuyen">
+        <li><a href="../index.html#resetForm" id="">Đổi mật khẩu</a></li>
+        <li><a href="trangChu.html">Trang chủ</a></li>
+        <li class="m1"><a href="newInfo.html">Cập nhập thông tin</a></li>
+        <li><a href="diem.html">Kết quả học tập</a></li>
+        <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
+        <li><a href="#" id="logoutBtn">Đăng xuất</a></li>
+      </ul>
+    </aside>
+  </main>
+  <script src="../../static/form.js"></script>
+</body>
+</html>

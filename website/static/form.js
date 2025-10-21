@@ -24,7 +24,7 @@ function login() {
         const t = document.getElementById("ten").value.trim();
         const mk = document.getElementById("mk").value;
 
-        fetch('/login',{
+        fetch('/',{
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
