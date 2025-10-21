@@ -12,7 +12,6 @@ def create_app():
     # ĐÃ SỬA: Thêm 'r' vào trước chuỗi để xử lý các ký tự gạch chéo ngược (\) trong tên server MSSQL
     # Điều này ngăn Python hiểu nhầm '\C' và '\S' là các ký tự thoát.
     # app.config['SQLALCHEMY_DATABASE_URI'] = r'mssql+pyodbc://NHATTRAN\CLCCSDLPTNHOM11/Qlsv?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'
-    app.config['SQLALCHEMY_DATABASE_URI'] = r'mssql+pyodbc://NHATTRAN\CLCCSDLPTNHOM11/Qlsv?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'
     
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = "quanlysinhvien2025" 
