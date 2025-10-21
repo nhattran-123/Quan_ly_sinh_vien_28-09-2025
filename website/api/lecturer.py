@@ -5,7 +5,7 @@ from io import BytesIO
 from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms,Grade,Assignment,AssignmentType,AssignmentWeight
 from collections import Counter
 #,Department,Exam
-# from datetime import date
+from datetime import datetime
 from .. import login_manager
 import pandas as pd
 
@@ -15,6 +15,7 @@ TỔNG HỢP API CHO GIẢNG VIÊN (LECTURER)
 
 --- 1. THÔNG TIN CHUNG ---
 - Lấy thông tin giảng viên: http://127.0.0.1:5000/api/lecturer/userinfor (GET)
+- Sửa thông tin giảng viên: http://127.0.0.1:5000/api/lecturer/update_lecturer(PUT)
 - Danh sách các lớp mà giảng viên giảng dạy: http://127.0.0.1:5000/api/lecturer/classSections (GET)
 
 --- 2. QUẢN LÝ SINH VIÊN TRONG LỚP ---
@@ -157,6 +158,44 @@ def userinfor():
     else:
         user_data["details"]={"error":"Lecturer details record missing"}
     return jsonify(user_data),200
+@lecturer_bp.route('/update_lecturer', methods=["PUT"])
+@fresh_login_required
+def update_lecturer():
+    if current_user.role != 'lecturer':
+        return jsonify({"error": "Không thành công", "message": "Bạn không có quyền truy cập"}), 403
+    
+    lecturer = Lecturer.query.filter_by(user_id=current_user).first()
+    if not lecturer:
+        return jsonify({"error": "Lỗi CSDL", "message": "Dữ liệu giảng viên không đồng nhất"}), 500
+        
+    data = request.get_json(silent=True) or request.form
+    if not data:
+        return jsonify({"error": "Lỗi", "message": "Không có dữ liệu nào được gửi"}), 400
+        
+    try:
+        current_user.full_name = data.get('full_name', current_user.full_name)
+        
+        new_email = data.get('email')
+        if new_email and new_email != current_user.email:
+            if User.query.filter(User.email == new_email, User.id != current_user.id).first():
+                return jsonify({"error": "Xung đột", "message": f"Email '{new_email}' đã được sử dụng"}), 409
+            current_user.email = new_email
+            
+        dob_str = data.get('date_of_birth')
+        if dob_str:
+            try:
+                current_user.date_of_birth = datetime.strptime(dob_str, "%d-%m-%Y").date()
+            except ValueError:
+                return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
+
+        lecturer.position = data.get('position', lecturer.position)
+        db.session.commit()
+        
+        return jsonify({"message": "Cập nhật thông tin giảng viên thành công"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Lỗi CSDL", "message": str(e)}), 500
 
 # ==================================================
 # 2. QUẢN LÝ LỚP HỌC
