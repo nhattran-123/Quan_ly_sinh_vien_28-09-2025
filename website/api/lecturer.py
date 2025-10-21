@@ -11,27 +11,34 @@ import pandas as pd
 
 lecturer_bp=Blueprint('lecturer',__name__)
 """
-    -Lấy thông tin giảng viên :http://127.0.0.1:5000/api/lecturer/userinfor(GET)
-    -Danh sách các lớp mà giảng viên giảng dạy:http://127.0.0.1:5000/api/lecturer/classSections(GET)
-    -Danh sách sinh viên từng lớp:http://127.0.0.1:5000/api/lecturer/list_student/<class_id>(GET)
-    -Danh sách điểm của  cac sinh viên thuộc lớp  đó : http://127.0.0.1:5000/api/lecturer/grades/<class_id>(GET)
-    -Sửa điểm cho 1 sinh viên thuộc lớp đó:http://127.0.0.1:5000/api/lecturer/grades/<class_id>/<student_id>(PUT)
-   - Nhập điểm bằng kiểu như này , có thể chỉ sửa 1 điểm nào đó
+TỔNG HỢP API CHO GIẢNG VIÊN (LECTURER)
+
+--- 1. THÔNG TIN CHUNG ---
+- Lấy thông tin giảng viên: http://127.0.0.1:5000/api/lecturer/userinfor (GET)
+- Danh sách các lớp mà giảng viên giảng dạy: http://127.0.0.1:5000/api/lecturer/classSections (GET)
+
+--- 2. QUẢN LÝ SINH VIÊN TRONG LỚP ---
+- Danh sách sinh viên từng lớp: http://127.0.0.1:5000/api/lecturer/list_student/<class_id> (GET)
+- Lấy ra file excel Danh sách sinh viên lớp đó: http://127.0.0.1:5000/api/lecturer/list_student/export-excel/<class_id> (GET)
+
+--- 3. QUẢN LÝ ĐIỂM ---
+- Danh sách điểm của cac sinh viên thuộc lớp đó: http://127.0.0.1:5000/api/lecturer/grades/<class_id> (GET)
+- Sửa điểm cho 1 sinh viên thuộc lớp đó: http://127.0.0.1:5000/api/lecturer/grades/<class_id>/<student_id> (PUT)
+    Nhập điểm bằng kiểu như này , có thể chỉ sửa 1 điểm nào đó
      {
     "DIEM_CC": 9.5,
     "DIEM_GK": 8.0,
     "DIEM_CK": 7.5
     }
-    -Lấy ra biết đồ tròn điểm :http://127.0.0.1:5000/api/lecturer/grades/distribution/<class_id>(GET)
-    -Lấy ra file excel Danh sách sinh viên lớp đó:http://127.0.0.1:5000/api/lecturer/list_student/export-excel/<class_id>(GET)
-    -Cập nhật điểm cho 1 lớp bằng file excel: http://127.0.0.1:5000/api/lecturer/grades/upload-excel/<class_id>(POST)
+- Cập nhật điểm cho 1 lớp bằng file excel: http://127.0.0.1:5000/api/lecturer/grades/upload-excel/<class_id> (POST)
     file excel có dạng:
     student_id|Chuyên cần|Kiểm tra 1|Cuối kì
     SV001     |9         |8         |7.5
     SV002     |10        |7.5       |8
     SV003     |8.5       |8         |9
     SV004     |0         |6         |5.5
-    """
+- Lấy ra biểu đồ tròn phân phối điểm: http://127.0.0.1:5000/api/lecturer/grades/distribution/<class_id> (GET)
+"""
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -104,8 +111,8 @@ def calculate_enrollment_final_grade(enrollment, weight_map):
         
         # LOGIC BỔ SUNG: Nếu có bất kỳ điểm 0 nào trong điểm thành phần, ghi đè thành 'F'
         if has_zero_grade:
-             letter_grade = "F"
-             
+                letter_grade = "F"
+            
     elif not any(v for v in type_grades.values() if v):
         # Chưa nhập bất kỳ điểm nào
         final_grade_rounded = None
@@ -119,6 +126,10 @@ def calculate_enrollment_final_grade(enrollment, weight_map):
 
 
 # --- KHU VỰC ROUTES ---
+
+# ==================================================
+# 1. THÔNG TIN CHUNG CỦA GIẢNG VIÊN
+# ==================================================
 
 @lecturer_bp.route('/userinfor',methods=["GET"])
 @fresh_login_required
@@ -146,6 +157,10 @@ def userinfor():
     else:
         user_data["details"]={"error":"Lecturer details record missing"}
     return jsonify(user_data),200
+
+# ==================================================
+# 2. QUẢN LÝ LỚP HỌC
+# ==================================================
 
 @lecturer_bp.route("/classSections",methods=["GET"])
 @fresh_login_required
@@ -184,6 +199,10 @@ def classSections():
     else:
         return jsonify(list_class), 200
 
+# ==================================================
+# 3. QUẢN LÝ SINH VIÊN (THEO LỚP)
+# ==================================================
+
 @lecturer_bp.route("/list_student/<class_id>", methods=["GET"])
 @fresh_login_required
 def list_student(class_id):
@@ -218,6 +237,132 @@ def list_student(class_id):
         return jsonify({"message": "Không có sinh viên nào trong lớp này hoặc ID lớp không hợp lệ."}), 404
     else:
         return jsonify(danh_sach)
+
+@lecturer_bp.route("/list_student/export-excel/<class_id>", methods=["GET"])
+@fresh_login_required
+def export_student_list_excel(class_id):
+    """
+    API để xuất danh sách sinh viên của một lớp ra file Excel.
+    """
+    # --- BƯỚC 1: KIỂM TRA QUYỀN VÀ LỚP HỌC ---
+    if current_user.role != 'lecturer':
+        return jsonify({"error": "Không thành công", "message": "Bạn không phải là giảng viên"}), 403
+
+    class_section = ClassSection.query.get(class_id)
+    if not class_section:
+        return jsonify({"error": "Lỗi", "message": "Không tìm thấy lớp học."}), 404
+
+    if class_section.lecturer_id != current_user.id:
+        return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
+    students_in_class = db.session.query(
+        User.id, 
+        User.full_name, 
+        User.email,
+        User.date_of_birth
+    ).join(
+        Student, User.id == Student.user_id
+    ).join(
+        Enrollment, Student.user_id == Enrollment.student_id
+    ).filter(
+        Enrollment.class_id == class_id
+    ).order_by(User.id).all()
+
+    if not students_in_class:
+        return jsonify({"message": "Lớp học này chưa có sinh viên."}), 404
+
+    # --- BƯỚC 3: CHUẨN BỊ DỮ LIỆU CHO EXCEL ---
+    data_for_excel = []
+    for student_id, full_name, email, date_of_birth in students_in_class:
+        data_for_excel.append({
+            "ID": student_id,
+            "Họ và Tên": full_name,
+            "Email": email,
+            "Ngày Sinh": date_of_birth.strftime("%d-%m-%Y") if date_of_birth else ""
+        })
+    
+    # --- BƯỚC 4: TẠO VÀ GỬI FILE EXCEL ---
+    try:
+        df = pd.DataFrame(data_for_excel)
+        output_buffer = BytesIO()
+        df.to_excel(output_buffer, index=False)
+        output_buffer.seek(0)
+        
+        filename = f"Danh_sach_SV_Lop_{class_id}.xlsx"
+        
+        return send_file(
+            output_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        return jsonify({"error": "Lỗi hệ thống khi tạo file Excel", "message": str(e)}), 500
+
+# ==================================================
+# 4. QUẢN LÝ ĐIỂM (THEO LỚP)
+# ==================================================
+
+@lecturer_bp.route("/grades/<class_id>", methods=["GET"])
+@fresh_login_required 
+def get_class_grades(class_id):
+    if current_user.role != 'lecturer':
+        return jsonify({"error": "Không thành công", "message": "Bạn không phải là giảng viên"}), 403
+
+    class_section = ClassSection.query.get(class_id)
+    if not class_section:
+        return jsonify({"error": "Lỗi", "message": "Không tìm thấy lớp học."}), 404
+
+    if class_section.lecturer_id != current_user.id:
+        return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
+    """
+    Chỉ lấy ra (READ) các điểm thô, điểm trung bình thành phần và điểm cuối cùng (đã được tính và lưu trước đó).
+    """
+    
+    # 1. Lấy thông tin trọng số điểm của lớp học (Chỉ để biết các cột điểm cần hiển thị)
+    weights_query = AssignmentWeight.query.filter_by(class_id=class_id).all()
+    weight_map = {w.assignment_type.name: w.weight / 10.0 for w in weights_query}
+    
+    # 2. Lấy danh sách sinh viên đăng ký lớp này
+    enrollments = Enrollment.query.filter_by(class_id=class_id).all()
+    result = []
+
+    for e in enrollments:
+        student = e.student_ref
+        grades = Grade.query.filter_by(enrollment_id=e.id).all()
+        
+        # Khởi tạo dữ liệu điểm thành phần (sẽ hiển thị điểm trung bình)
+        grade_data = {atype: "" for atype in weight_map.keys()}
+        type_grades_list = {atype: [] for atype in weight_map.keys()}
+        
+        # Phân loại điểm thô
+        for g in grades:
+            if g.assignment and g.assignment.assignment_type:
+                atype = g.assignment.assignment_type.name
+                if atype in type_grades_list and g.grade is not None:
+                    type_grades_list[atype].append(g.grade)
+                    
+        # Tính điểm trung bình thành phần để hiển thị
+        for atype in weight_map.keys():
+                if type_grades_list[atype]:
+                    avg_grade = sum(type_grades_list[atype]) / len(type_grades_list[atype])
+                    grade_data[atype] = round(avg_grade, 2)
+                else:
+                    grade_data[atype] = ""
+
+        # LẤY KẾT QUẢ ĐIỂM CUỐI CÙNG ĐÃ ĐƯỢC LƯU SẴN TỪ ENROLLMENT
+        final_grade_db = e.final_grade
+        letter_grade_db = e.letter_grade if e.letter_grade is not None else ""
+            
+        # 3. Cập nhật kết quả
+        result.append({
+            "student_id": student.user_id,
+            "student_name": student.user.full_name,
+            **grade_data,
+            "final_grade": final_grade_db if final_grade_db is not None else "", 
+            "letter_grade": letter_grade_db
+        })
+    
+    return jsonify(result)
 
 @lecturer_bp.route("/grades/<class_id>/<student_id>", methods=["PUT"]) 
 @fresh_login_required
@@ -296,109 +441,7 @@ def update_student_grade(class_id, student_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Lỗi hệ thống", "message": str(e)}), 500
-@lecturer_bp.route("/grades/<class_id>", methods=["GET"])
-@fresh_login_required 
-def get_class_grades(class_id):
-    """
-    Chỉ lấy ra (READ) các điểm thô, điểm trung bình thành phần và điểm cuối cùng (đã được tính và lưu trước đó).
-    """
-    
-    # 1. Lấy thông tin trọng số điểm của lớp học (Chỉ để biết các cột điểm cần hiển thị)
-    weights_query = AssignmentWeight.query.filter_by(class_id=class_id).all()
-    weight_map = {w.assignment_type.name: w.weight / 10.0 for w in weights_query}
-    
-    # 2. Lấy danh sách sinh viên đăng ký lớp này
-    enrollments = Enrollment.query.filter_by(class_id=class_id).all()
-    result = []
 
-    for e in enrollments:
-        student = e.student_ref
-        grades = Grade.query.filter_by(enrollment_id=e.id).all()
-        
-        # Khởi tạo dữ liệu điểm thành phần (sẽ hiển thị điểm trung bình)
-        grade_data = {atype: "" for atype in weight_map.keys()}
-        type_grades_list = {atype: [] for atype in weight_map.keys()}
-        
-        # Phân loại điểm thô
-        for g in grades:
-            if g.assignment and g.assignment.assignment_type:
-                atype = g.assignment.assignment_type.name
-                if atype in type_grades_list and g.grade is not None:
-                    type_grades_list[atype].append(g.grade)
-                    
-        # Tính điểm trung bình thành phần để hiển thị
-        for atype in weight_map.keys():
-             if type_grades_list[atype]:
-                avg_grade = sum(type_grades_list[atype]) / len(type_grades_list[atype])
-                grade_data[atype] = round(avg_grade, 2)
-             else:
-                grade_data[atype] = ""
-
-        # LẤY KẾT QUẢ ĐIỂM CUỐI CÙNG ĐÃ ĐƯỢC LƯU SẴN TỪ ENROLLMENT
-        final_grade_db = e.final_grade
-        letter_grade_db = e.letter_grade if e.letter_grade is not None else ""
-            
-        # 3. Cập nhật kết quả
-        result.append({
-            "student_id": student.user_id,
-            "student_name": student.user.full_name,
-            **grade_data,
-            "final_grade": final_grade_db if final_grade_db is not None else "", 
-            "letter_grade": letter_grade_db
-        })
-    
-    return jsonify(result)
-
-@lecturer_bp.route("/grades/distribution/<class_id>", methods=["GET"])
-@fresh_login_required
-def get_grade_distribution(class_id):
-    # 1. Lấy tất cả các bản ghi Enrollment cho lớp học này
-    enrollments = Enrollment.query.filter_by(class_id=class_id).all()
-
-    if not enrollments:
-        return jsonify({"message": "Không tìm thấy sinh viên nào đăng ký lớp học này."}), 404
-
-    # 2. Lấy danh sách tất cả các điểm chữ đã được tính và lưu
-    letter_grades = [
-        e.letter_grade 
-        for e in enrollments 
-        if e.letter_grade is not None and e.letter_grade != "N/A" # Chỉ đếm các điểm đã được tính
-    ]
-
-    # 3. Đếm số lượng sinh viên cho mỗi loại điểm chữ
-    grade_counts = Counter(letter_grades)
-
-    # 4. Chuyển đổi dữ liệu sang định dạng phù hợp cho biểu đồ tròn
-    chart_data = []
-    
-    # Định nghĩa màu sắc cố định cho các loại điểm
-    color_map = {
-        "A": "#4CAF50",      # Green (Tốt)
-        "B+": "#8BC34A",     # Light Green
-        "B": "#CDDC39",      # Lime
-        "C+": "#FFEB3B",     # Yellow (Trung bình)
-        "C": "#FFC107",      # Amber
-        "D+": "#FF9800",     # Orange
-        "D": "#FF5722",      # Deep Orange
-        "F": "#F44336",      # Red (Rớt)
-    }
-
-    total_graded_students = len(letter_grades)
-    
-    for grade, count in grade_counts.items():
-        chart_data.append({
-            "name": grade,
-            "value": count,
-            "percentage": round((count / total_graded_students) * 100, 1) if total_graded_students > 0 else 0,
-            "color": color_map.get(grade, "#B0BEC5")
-        })
-
-    # 5. Trả về JSON
-    return jsonify({
-        "class_id": class_id,
-        "total_graded_students": total_graded_students,
-        "distribution": chart_data
-    })
 @lecturer_bp.route("/grades/upload-excel/<class_id>",methods=["POST"])
 @fresh_login_required
 def upload_grades_excel(class_id):
@@ -413,7 +456,7 @@ def upload_grades_excel(class_id):
         return jsonify({"error": "Lỗi", "message": "Không có file nào được tải lên."}), 400
     file = request.files['file']
     if file.filename=='':
-       return jsonify({"error": "Lỗi", "message": "Chưa chọn file để tải lên."}), 400 
+        return jsonify({"error": "Lỗi", "message": "Chưa chọn file để tải lên."}), 400 
     if not file.filename.endswith(('.xlsx','.xls')):
         return jsonify({"error": "Lỗi định dạng", "message": "Chỉ chấp nhận file Excel (.xlsx, .xls)."}), 400
     try:
@@ -480,13 +523,10 @@ def upload_grades_excel(class_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Lỗi hệ thống khi tính điểm cuối cùng", "message": str(e)}), 500
-@lecturer_bp.route("/list_student/export-excel/<class_id>", methods=["GET"])
+
+@lecturer_bp.route("/grades/distribution/<class_id>", methods=["GET"])
 @fresh_login_required
-def export_student_list_excel(class_id):
-    """
-    API để xuất danh sách sinh viên của một lớp ra file Excel.
-    """
-    # --- BƯỚC 1: KIỂM TRA QUYỀN VÀ LỚP HỌC ---
+def get_grade_distribution(class_id):
     if current_user.role != 'lecturer':
         return jsonify({"error": "Không thành công", "message": "Bạn không phải là giảng viên"}), 403
 
@@ -496,49 +536,50 @@ def export_student_list_excel(class_id):
 
     if class_section.lecturer_id != current_user.id:
         return jsonify({"error": "Không thành công", "message": "Bạn không phụ trách lớp học này"}), 403
+    # 1. Lấy tất cả các bản ghi Enrollment cho lớp học này
+    enrollments = Enrollment.query.filter_by(class_id=class_id).all()
 
-    # --- BƯỚC 2: TRUY VẤN DANH SÁCH SINH VIÊN (Sử dụng lại query từ API list_student) ---
-    students_in_class = db.session.query(
-        User.id, 
-        User.full_name, 
-        User.email,
-        User.date_of_birth
-    ).join(
-        Student, User.id == Student.user_id
-    ).join(
-        Enrollment, Student.user_id == Enrollment.student_id
-    ).filter(
-        Enrollment.class_id == class_id
-    ).order_by(User.id).all()
+    if not enrollments:
+        return jsonify({"message": "Không tìm thấy sinh viên nào đăng ký lớp học này."}), 404
 
-    if not students_in_class:
-        return jsonify({"message": "Lớp học này chưa có sinh viên."}), 404
+    # 2. Lấy danh sách tất cả các điểm chữ đã được tính và lưu
+    letter_grades = [
+        e.letter_grade 
+        for e in enrollments 
+        if e.letter_grade is not None and e.letter_grade != "N/A" # Chỉ đếm các điểm đã được tính
+    ]
 
-    # --- BƯỚC 3: CHUẨN BỊ DỮ LIỆU CHO EXCEL ---
-    data_for_excel = []
-    for student_id, full_name, email, date_of_birth in students_in_class:
-        data_for_excel.append({
-            "ID": student_id,
-            "Họ và Tên": full_name,
-            "Email": email,
-            "Ngày Sinh": date_of_birth.strftime("%d-%m-%Y") if date_of_birth else ""
-        })
+    # 3. Đếm số lượng sinh viên cho mỗi loại điểm chữ
+    grade_counts = Counter(letter_grades)
+
+    # 4. Chuyển đổi dữ liệu sang định dạng phù hợp cho biểu đồ tròn
+    chart_data = []
     
-    # --- BƯỚC 4: TẠO VÀ GỬI FILE EXCEL ---
-    try:
-        df = pd.DataFrame(data_for_excel)
-        output_buffer = BytesIO()
-        df.to_excel(output_buffer, index=False)
-        output_buffer.seek(0)
-        
-        filename = f"Danh_sach_SV_Lop_{class_id}.xlsx"
-        
-        return send_file(
-            output_buffer,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name=filename
-        )
-    except Exception as e:
-        return jsonify({"error": "Lỗi hệ thống khi tạo file Excel", "message": str(e)}), 500
+    # Định nghĩa màu sắc cố định cho các loại điểm
+    color_map = {
+        "A": "#4CAF50",      # Green (Tốt)
+        "B+": "#8BC34A",     # Light Green
+        "B": "#CDDC39",      # Lime
+        "C+": "#FFEB3B",     # Yellow (Trung bình)
+        "C": "#FFC107",      # Amber
+        "D+": "#FF9800",     # Orange
+        "D": "#FF5722",      # Deep Orange
+        "F": "#F44336",      # Red (Rớt)
+    }
 
+    total_graded_students = len(letter_grades)
+    
+    for grade, count in grade_counts.items():
+        chart_data.append({
+            "name": grade,
+            "value": count,
+            "percentage": round((count / total_graded_students) * 100, 1) if total_graded_students > 0 else 0,
+            "color": color_map.get(grade, "#B0BEC5")
+        })
+
+    # 5. Trả về JSON
+    return jsonify({
+        "class_id": class_id,
+        "total_graded_students": total_graded_students,
+        "distribution": chart_data
+    })
