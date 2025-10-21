@@ -433,7 +433,6 @@ def update_student_grade(class_id, student_id):
         
         enrollment.final_grade = final_grade
         enrollment.letter_grade = letter_grade
-        
         # 4. COMMIT TOÀN BỘ THAY ĐỔI
         db.session.commit()
         return jsonify({"message": f"Cập nhật điểm cho sinh viên {student_id} thành công!"}), 200
