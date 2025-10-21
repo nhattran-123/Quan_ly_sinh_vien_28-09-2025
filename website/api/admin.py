@@ -290,7 +290,6 @@ def lecturer_excel(department_id):
     except Exception as e:
         return jsonify({"error": "Lỗi máy chủ", "message": str(e)}), 500
 
-# === SỬA LỖI CÚ PHÁP: .router -> .route VÀ methods="POST" -> methods=["POST"] ===
 @admin_bp.route('/add_lecturer/<department_id>', methods=["POST"])
 @fresh_login_required
 def add_lecturer(department_id): 
@@ -405,12 +404,13 @@ def upload_excel_lecturer(department_id):
         if not all([id, email, password, full_name, dob_str, position]):
             errors.append(f"Hàng {idx}: Thiếu thông tin.")
             continue 
-
+        
         if id in set_id:
-            skipped_count += 1
-            continue 
+            errors.append(f"Hàng {idx}: id '{id}' đã tồn tại.")
         if email in set_email:
             errors.append(f"Hàng {idx}: Email '{email}' đã tồn tại.")
+        if id in set_id or email in set_email:
+            skipped_count+=1
             continue
 
         try:
