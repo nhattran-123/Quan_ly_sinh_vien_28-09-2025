@@ -141,18 +141,18 @@ def userinfor():
         }), 403
     user_data={
         "id": current_user.id,
-        "fullname":current_user.full_name,
-        "birthday": current_user.date_of_birth.strftime("%d-%m-%Y") if current_user.date_of_birth else None,
+        "Họ và Tên":current_user.full_name,
+        "Ngày sinh": current_user.date_of_birth.strftime("%d-%m-%Y") if current_user.date_of_birth else None,
         "email":current_user.email,
-        "role": current_user.role,  
+        "Chức danh": current_user.role,  
     }
     Lecturer_infor=Lecturer.query.filter_by(user_id=current_user.id).first()
 
     if Lecturer_infor:
         user_data["details"]={
             "department_id":Lecturer_infor.department_id,
-            "department_name":Lecturer_infor.department.name,
-            "position":Lecturer_infor.position
+            "Tên Khoa":Lecturer_infor.department.name,
+            "Chức vụ":Lecturer_infor.position
         }
     else:
         user_data["details"]={"error":"Lecturer details record missing"}
@@ -181,17 +181,16 @@ def classSections():
         list_class.append({
             "STT":dem,
             "id":i.id,
-            "coure": i.course_id,
-            "lecturer_name":current_user.full_name,
-            "name":course.name,
-            "credit":course.credits,
-            "theory_hours":course.theory_hours,
-            "practice_hours":course.practice_hours,
-            "room":vtri_phong,
-            "max_students":i.max_students,
-            "schedule":i.schedule,
-            "start_date":i.start_date.strftime("%d-%m-%Y"),
-            "end_date":i.end_date.strftime("%d-%m-%Y")
+            "coure_id": i.course_id,
+            "Tên giảng viên":current_user.full_name,
+            "Tên khóa học":course.name,
+            "Số tín":course.credits,
+            "Lý thuyết":course.theory_hours,
+            "Thực hành":course.practice_hours,
+            "Phòng":vtri_phong,
+            "Số học sinh tối đa":i.max_students,
+            "Ngày bắt đầu":i.start_date.strftime("%d-%m-%Y"),
+            "Ngày kết thúc":i.end_date.strftime("%d-%m-%Y")
         })
         dem+=1
     if not list_class:
@@ -227,10 +226,10 @@ def list_student(class_id):
 
         danh_sach.append({
             "STT":dem,
-            "full_name": full_name,
+            "Họ và tên": full_name,
             "id": student_id,
             "email": email,
-            "birth_day": birth_day_str
+            "Ngày sinh": birth_day_str
         })
         dem += 1
     if not danh_sach:
@@ -356,10 +355,10 @@ def get_class_grades(class_id):
         # 3. Cập nhật kết quả
         result.append({
             "student_id": student.user_id,
-            "student_name": student.user.full_name,
+            "Họ và Tên": student.user.full_name,
             **grade_data,
-            "final_grade": final_grade_db if final_grade_db is not None else "", 
-            "letter_grade": letter_grade_db
+            "Tổng kết": final_grade_db if final_grade_db is not None else "", 
+            "Điểm chữ": letter_grade_db
         })
     
     return jsonify(result)

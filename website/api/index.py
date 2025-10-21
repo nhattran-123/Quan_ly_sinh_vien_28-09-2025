@@ -38,9 +38,9 @@ def login():
 
     resp = make_response(jsonify({
         "message": "Đăng nhập thành công",
-        "user": user.id,
-        "full_name": user.full_name,
-        "role": user.role
+        "id": user.id,
+        "Họ và Tên": user.full_name,
+        "Chức danh": user.role
     }), 200)
 
     # Đặt cookie (tùy chỉnh thêm, ví dụ 1h)
@@ -69,8 +69,8 @@ def get_current_user():
     if current_user.is_authenticated:
         return jsonify({
             "id": current_user.id,
-            "fullname": current_user.full_name,
-            "role": current_user.role
+            "Họ và Tên": current_user.full_name,
+            "Chức danh": current_user.role
         }), 200
     return jsonify({"error": "Chưa đăng nhập"}), 401
 

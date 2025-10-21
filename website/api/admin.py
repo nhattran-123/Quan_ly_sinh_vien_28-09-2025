@@ -5,7 +5,7 @@ from io import BytesIO
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 # Giả sử bạn đã import các model này ở đâu đó, ví dụ: from ..models import User, Department, Lecturer
-from ..models import User, Department, Lecturer 
+from ..models import User, Department, Lecturer, Student
 from collections import Counter
 from .. import login_manager
 import pandas as pd
@@ -27,6 +27,8 @@ admin_bp = Blueprint('admin', __name__)
 -Thêm giáo viên bằng nhập thủ công:http://127.0.0.1:5000/api/admin/add_lecturer/<department_id> (POST)
 -Thêm giáo viên bằng file excel:http://127.0.0.1:5000/api/admin/upload_excel_lecturer/<department_id> (POST)
 -Sửa thông tin của một giảng viên:http://127.0.0.1:5000/api/admin/update_lecturer/<lecturer_id> (PUT)
+  4.SINH VIÊN THEO TỪNG KHOA
+-Lấy ra danh sách sinh viên theo khoa:http://127.0.0.1:5000/api/admin/students/<department_id>(GET)
 """
 
 # 1. THÔNG TIN CHUNG
@@ -45,8 +47,8 @@ def userinfor():
     user_data = {
         "id": current_user.id,
         "email": current_user.email,
-        "role": current_user.role,
-        "full name": current_user.full_name,
+        "Chức danh": current_user.role,
+        "Họ và Tên": current_user.full_name,
     }
     return jsonify(user_data), 200
 
@@ -62,7 +64,7 @@ def list_department():
         if not departments: 
             return jsonify({"message": "Không tìm thấy khoa nào."}), 404
         
-        list_departments = [{"id": x.id, "name": x.name} for x in departments]
+        list_departments = [{"id": x.id, "Tên Khoa": x.name} for x in departments]
         return jsonify(list_departments), 200
     except Exception as e:
         return jsonify({"error": "Lỗi máy chủ", "message": str(e)}), 500
@@ -230,9 +232,9 @@ def lecturers(department_id):
             user_data.append({
                 "id": id,
                 "email": email,
-                "full_name": full_name,
-                "birthday": date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
-                "position": position
+                "Họ và Tên": full_name,
+                "Ngày Sinh": date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
+                "Chức vụ": position
             })
         
         return jsonify(user_data), 200
@@ -268,9 +270,9 @@ def lecturer_excel(department_id):
         user_data.append({
             "id": id,
             "email": email,
-            "full_name": full_name,
-            "birthday": date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
-            "position": position
+            "Họ và Tên": full_name,
+            "Ngày sinh": date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
+            "Chức vụ": position
         })
         
     try: 
@@ -527,3 +529,88 @@ def update_lecturer(lecturer_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Lỗi CSDL", "message": str(e)}), 500
+@admin_bp.route('/students/<department_id>',methods=["GET"])
+@fresh_login_required
+def students(department_id):
+    if current_user.role != 'admin':
+        return jsonify({"error": "Không thành công", "message": "Bạn không có quyền truy cập"}), 403
+
+    if not Department.query.get(department_id):
+        return jsonify({"error": "Lỗi", "message": "Khoa này không tồn tại"}), 404
+    try:
+        results = db.session.query(
+            User.id,
+            User.email,
+            User.full_name,
+            User.date_of_birth,
+            Student.entry_year,
+            Student.status
+        ).join(
+            Student, User.id==Student.user_id
+        ).filter(
+            Student.department_id==department_id
+        ).all()
+        if not results:
+            return jsonify({"message": "Không tìm thấy sinh viên nào trong khoa này."}), 404
+        user_data=[]
+        for id, email, full_name,date_of_birth,entry_year,status in results:
+            user_data.append({
+                "id": id,
+                "email": email,
+                "Họ và Tên": full_name,
+                "Ngày sinh":date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
+                "Trạng thái":status,
+                "Khóa học":entry_year
+            })
+        return jsonify(user_data)
+    except Exception as e:
+        return jsonify({"error":"Lỗi máy chủ","message": str(e)}),500
+@admin_bp.route('/students-excel/<department_id>',methods=["GET"])
+@fresh_login_required
+def students_excel(department_id):
+    if current_user.role != 'admin':
+        return jsonify({"error": "Không thành công", "message": "Bạn không có quyền truy cập"}), 403
+
+    if not Department.query.get(department_id):
+        return jsonify({"error": "Lỗi", "message": "Khoa này không tồn tại"}), 404
+    try:
+        results = db.session.query(
+            User.id,
+            User.email,
+            User.full_name,
+            User.date_of_birth,
+            Student.entry_year,
+            Student.status
+        ).join(
+            Student, User.id==Student.user_id
+        ).filter(
+            Student.department_id==department_id
+        ).all()
+        if not results:
+            return jsonify({"message": "Không tìm thấy sinh viên nào trong khoa này."}), 404
+        user_data=[]
+        for id, email, full_name,date_of_birth,entry_year,status in results:
+            user_data.append({
+                "id": id,
+                "email": email,
+                "Họ và Tên": full_name,
+                "Ngày Sinh":date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
+                "Trạng thái":status,
+                "Khóa học":entry_year
+            })
+    except Exception as e:
+        return jsonify({"error":"Lỗi máy chủ","message": str(e)}),500
+    try:
+        df = pd.DataFrame(user_data)
+        output_buffer =BytesIO()
+        df.to_excel(output_buffer,index=False)
+        output_buffer.seek(0)
+        filename=f"Danh_sach_sinh_vien_{department_id}.xlsx"
+        return send_file(
+            output_buffer,as_attachment=True,
+            download_name=filename,
+             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        return jsonify({"error": "Lỗi máy chủ", "message": str(e)}), 500
+    
