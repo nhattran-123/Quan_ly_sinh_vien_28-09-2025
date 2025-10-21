@@ -1,4 +1,4 @@
-// thử ngày 07/10/2025. Hàm 4?
+//  Hàm 4?
 // Hàm sử lý ẩn/hiện
 function showForm(formName){
     // Ẩn tất cả các form
