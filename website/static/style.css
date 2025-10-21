@@ -1,11 +1,4 @@
 /* Thử style của bên sinh viên - ngày 06/10/2025*/
-.avatar {
-    width: 120px; 
-    height: 120px; 
-    border-radius: 50%; 
-    object-fit: cover; 
-    margin-bottom: 20px;
-}
 label { 
     display: block; 
     margin-top: 10px; 
@@ -15,59 +8,47 @@ input[type="text"], input[type="email"], input[type="password"] {
     padding: 5px; 
     margin-top: 5px;
 }
-button { 
+button { /* các ô cập nhật, đăng nhập...*/
     background-color: #ee8c8c;
     margin-top: 10px; 
     padding: 7px 10px; 
     width: 100%;
     font-size: large;
 }
-.index-box { 
-    font-family: Arial; 
+/* khung đăng nhập,...*/
+.login-box {
     display: flex;
-    height: 100vh; 
-    justify-content: center; /*căn giữa ngang*/
-    align-items:center; /*căn giữa dọc*/
-    border: #000000;
+    justify-content: center; /* căn giữa ngang */
+    align-items: center;     /* căn giữa dọc */
+    height: 100vh;           /* chiếm toàn bộ chiều cao trình duyệt */
+    margin: 0;
+    background-color: #ffffff; /* nền xám nhẹ */
 }
-.log-box {
+.login-box form {
     border: 1px solid #000000; 
     padding: 30px; 
     border-radius: 8px; 
     width: 300px; 
     background-color: #ffffff;
 }
+
+/* các form ẩn tro
+ng templates/index.html*/
 .hidden {
     display: none;
 }
-h1 {
-    background-color: #ffffff;
-    color: #000000;
-}
-h2 {
-    background-color: #ffffff;
-}
-h3 {
-    background-color:#ffffff;
-    color: #000000;
-    padding: 5px;
-    width: 45%;
-}
-.left1 {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, mimax(200px,1fr));
-    gap: 15px;
-}
+/* định dạng bố cục trang*/
 main {
     display: flex;
     background-color: #ffffff;
 }
+/* nửa trang bên phải*/
 main article {
     flex: 3;
     padding: 10px;
     border: 3px solid #000000 ;
 }
+/* Nửa trái của trang: chuyển đổi tính năng*/
 main aside{
     flex: 1;
     padding: 10px;
@@ -84,7 +65,20 @@ main aside{
     line-height: 1.5;/*khoảng cách dòng*/
     padding: 5px 0;
 }
-.m1 { /* trang hiện tại */
+/* thể hiện trang(tính năng) hiện tại */
+.m1 {
     color: #ebb0b0;
     background-color: #ebb0b0;
+}
+/* dạng bảng dữ liệu cơ bản*/
+table.danhSach {
+  width: 100%;
+  border-collapse: collapse; /* gộp viền lại cho gọn */
+}
+
+table.danhSach th,
+table.danhSach td {
+  border: 1px solid black; /* viền đen */
+  padding: 8px;
+  text-align: left;
 }

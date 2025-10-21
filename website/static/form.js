@@ -194,26 +194,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Hàm 5: xử lý khi người dùng chọn ảnh
-function avatar() {
-    const fileInput = document.getElementById('fileInput');
-    const previewImg = document.getElementById('preview');
-
-    if (!fileInput || !previewImg) return;
-
-    fileInput.addEventListener('change', function (event) {
-        const file = event.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                previewImg.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        } else {
-            alert("Vui lòng chọn một tệp ảnh hợp lệ.");
-        }
-    });
-}
 
 // Gọi tất cả các hàm 1 lần khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded',function(){
@@ -224,5 +204,4 @@ document.addEventListener('DOMContentLoaded',function(){
     if (!window.location.hash) {
         showForm('login'); // Chỉ hiện đăng nhập nếu không có hash
     }
-    avatar();
 });
