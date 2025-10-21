@@ -111,7 +111,7 @@ def update_department(department_id):
         return jsonify({"error":"Không thành công","message":"Bạn không có quyền truy cập"}), 403
     department=Department.query.filter_by(id=department_id).first()
     if not department:
-        return jsonify({"error":"Lỗi"},"message":"Khoa này chưa tồn tại"), 404
+        return jsonify({"error":"Lỗi","message":"Khoa này chưa tồn tại"}), 404
     data=request.get_json(silent=True) or request.form
     if not data:
         return jsonify({"error":"Lỗi","message":"Dữ liệu chưa được gửi lên"}), 400
