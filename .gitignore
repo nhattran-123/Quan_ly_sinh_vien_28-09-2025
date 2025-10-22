@@ -3,18 +3,3 @@ venv/
 env/
 .idea/
 
-# Bỏ qua file cấu hình máy
-website/__init__.py
-
-# Bỏ qua file compiled Python
-__pycache__/
-*.pyc
-
-# Bỏ qua file database cục bộ
-*.db
-
-seed_data.py
-
-# Bỏ qua các file .pyc và thư mục __pycache__
-__pycache__/
-*.pyc
