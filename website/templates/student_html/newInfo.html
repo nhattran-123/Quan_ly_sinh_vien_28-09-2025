@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Trang cá nhân</title>
+  <title>Sửa thông tin</title>
   <link rel="stylesheet" href="../../static/style.css">
 </head>
 <!--ngày 29/09/2025: chia bố cục trang 2 bên-->
@@ -10,27 +10,21 @@
   <main>
     <article>
       <h2>Sửa thông tin cá nhân</h2>
-      <form>
+      <form >
         <label for="name">Họ tên:</label>
         <input type="text" id="name" value="" readonly />
 <!-- id="name" để truy xuất bằng JS; value="" để bạn đổ dữ liệu động từ SQL; readonly ➜ không cho người dùng sửa-->
         <label for="maSV">Mã SV:</label>
         <input type="text" id="maSV" value="" readonly />
-
         <label for="mail">Email:</label>
         <input type="email" id="mail" value="" />
-
         <label for="nganh">Ngành:</label>
         <input type="text" id="nganh" value="" readonly />
-
         <label for="phone">Số điện thoại:</label>
         <input type="tel" id="phone" value="" placeholder="Không bắt buộc">
-
         <button type="submit">Lưu</button>
       </form>
-
     </article>
-
     <aside>
       <header>
         <h2>Tính năng</h2>
@@ -41,7 +35,7 @@
         <li class="m1"><a href="newInfo.html">Cập nhập thông tin</a></li>
         <li><a href="diem.html">Kết quả học tập</a></li>
         <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
-        <li><a href="#" id="logoutBtn">Đăng xuất</a></li>
+        <li><a href="../index.html#logoutForm" id="">Đăng xuất</a></li>
       </ul>
     </aside>
   </main>

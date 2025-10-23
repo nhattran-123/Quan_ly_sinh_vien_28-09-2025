@@ -1,18 +1,43 @@
-//  Hàm 4?
-// Hàm sử lý ẩn/hiện
+/* Các hàm:
+1. Xử lý ẩn/hiện đối với các form đăng nhập, đăng xuất, đổi mk
+2. Đăng nhập - login
+3. Đăng xuất - logout
+4. Đổi mật khẩu - set password
+5. Quên mật khẩu (chưa có API)
+*/
+//1. Hàm sử lý ẩn/hiện
 function showForm(formName){
-    // Ẩn tất cả các form
-    document.querySelectorAll('.log-box').forEach(form =>{
-        form.classList.add('hidden');
-    })
-    // Hiện form theo tên truyền vào
-    const formToShow = document.getElementById(formName + 'Form');
-    if(formToShow){
-        formToShow.classList.remove('hidden');
+    // Ẩn tất cả các form - ở trang index.html nào
+    if(window.location.pathname.endsWith('index.html')){
+        if(!formName) return; // Nếu không có formName thì bỏ qua
+        document.querySelectorAll("form").forEach(form => form.hidden =true);
+        // Hiện form theo tên truyền vào
+        const formToShow = document.getElementById(formName + 'Form');
+        if(formToShow){
+            formToShow.hidden=false;
+        }
     }
 }
+// Xử lý tính năng liên kết với trang khác
+window.addEventListener('DOMContentLoaded', () => {
+    const hash = window.location.hash;
 
-// Hàm 1: Xử lý form đăng nhập
+    if (hash) {
+        const formId = hash.replace('#', ''); // bỏ dấu #
+        const formElement = document.getElementById(formId);
+
+        if (formElement) {
+            // Ẩn tất cả form trước
+            ['loginForm', 'resetForm', 'forgotForm', 'logoutForm'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.hidden=true;
+            });
+            // Hiện form có id tương ứng với hash
+            formElement.hidden= false;
+        }
+    }
+});
+//2. Đăng nhập
 function login() {
     const lg = document.getElementById('loginForm');
     if(!lg)
@@ -21,16 +46,16 @@ function login() {
     lg.addEventListener('submit', function(e){
         e.preventDefault();
 
-        const t = document.getElementById("ten").value.trim();
-        const mk = document.getElementById("mk").value;
+        const ten = document.getElementById("id").value.trim();
+        const mk = document.getElementById("password").value;
 
-        fetch('/',{
+        fetch('/api/auth/login',{
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id: t,
+                id: ten,
                 password: mk
             })
         })
@@ -53,8 +78,25 @@ function login() {
         });
     });
 }
+//3. Đăng xuất 
+function setupLogout() {
+    const out = document.getElementById('logoutForm');
+    if (!out) return;
+    out.addEventListener("submit", function(e){
+        e.preventDefault();
 
-// Hàm 2: Xử lý đổi mật khẩu mật khẩu
+        fetch("/logout", {method: "POST"})
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            window.location.href="index.html";
+        })
+        .catch(error => {
+            console.error("Lỗi:",error);
+        })
+    });
+}
+//4. Đổi mật khẩu
 function passReset() {
     const form = document.getElementById('resetForm');
     if(!form){
@@ -68,7 +110,7 @@ function passReset() {
         const oldP =document.getElementById('oldP').value;
         const newMK=document.getElementById('newP').value;
         const xacnhan = document.getElementById('xacnhan').value;
-
+        
         if(newMK.length < 6){
             alert("Mật khẩu nên có ít nhất 6 ký tự.");
             return;
@@ -92,7 +134,7 @@ function passReset() {
         .then(data =>{
             if(data.message){
                 alert(data.message); // Đổi mật khẩu thành công
-                window.location.href = "log_SV.html"; // Chuyển về trang đăng nhập
+                window.location.href = "index.html"; // Chuyển về trang đăng nhập
             } else if(data.error){
                 alert("Lỗi: "+data.error);// Thông báo trả về từ backend
             }
@@ -103,8 +145,7 @@ function passReset() {
         });
     });
 }
-
-// Hàm 3: xử lý quên mật khẩu
+//5. Quên mật khẩu
 function forgotPass(){
     const forgot = document.getElementById('forgotForm');
     if(!forgot)
@@ -152,48 +193,6 @@ function forgotPass(){
         });
     });
 }
-// Hàm 4: đăng xuất 
-function setupLogout() {
-    const out = document.getElementById("logout");
-    if (!out) return;
-
-    out.addEventListener("click", function () {
-        fetch("/logout", {
-            method: "POST",
-            credentials: "same-origin", // để gửi cookie session nếu có
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message || "Đã đăng xuất.");
-            window.location.href = "log_SV.html"; // Chuyển về trang đăng nhập
-        })
-        .catch(error => {
-            console.error("Lỗi khi đăng xuất:", error);
-            alert("Không thể kết nối tới server.");
-        });
-    });
-}
-// xử lý tính năng liên kết với trang khác
-window.addEventListener('DOMContentLoaded', () => {
-    const hash = window.location.hash;
-
-    if (hash) {
-        const formId = hash.replace('#', ''); // bỏ dấu #
-        const formElement = document.getElementById(formId);
-
-        if (formElement) {
-            // Ẩn tất cả form trước
-            ['loginForm', 'resetForm', 'forgotForm'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
-            });
-
-            // Hiện form có id tương ứng với hash
-            formElement.classList.remove('hidden');
-        }
-    }
-});
-
 
 // Gọi tất cả các hàm 1 lần khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded',function(){
@@ -201,6 +200,7 @@ document.addEventListener('DOMContentLoaded',function(){
     login();
     forgotPass();
     setupLogout();
+
     if (!window.location.hash) {
         showForm('login'); // Chỉ hiện đăng nhập nếu không có hash
     }

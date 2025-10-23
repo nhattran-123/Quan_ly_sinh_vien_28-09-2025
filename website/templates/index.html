@@ -6,10 +6,10 @@
         <title>Trang tài khoản</title>
         <link rel="stylesheet" href="../static/style.css">
     </head>
-    <body class="index-box">
+    <body class="login-box">
         
         <!-- Form đăng nhập. ('hidden' là ẩn) -->
-        <form id="loginForm" class="log-box hidden" action="http://127.0.0.1:5000/api/auth/login" method="post">
+        <form id="loginForm" hidden action="http://127.0.0.1:5000/api/auth/login" method="post">
             <h2>Đăng nhập</h2>
             <label>Tên đăng nhập:
                 <input type="text" id="id" required/>
@@ -18,9 +18,15 @@
                 <input type="password" id="password" required/>
             </label>
             <button type="submit">Đăng nhập</button>
+            <p><a href="#" onclick="showForm('forgot')">Quên mật khẩu?</a></p>
+            <!--
+            <h2>Quên mật khẩu</h2>
+            <input type="text" id="forgotUser" placeholder="Tài khoản hoặc email" required>
+            <button type="submit">Gửi yêu cầu</button>
+            -->
         </form>
         <!-- Form quên mật khẩu -->
-        <form id="forgotForm" class="log-box hidden">
+        <form id="forgotForm" hidden>
             <h2>Quên mật khẩu</h2>
             <label>Email:
                 <input type="email" id="email" required/>
@@ -32,14 +38,9 @@
                 <input type="password" id="f-xacnhan" required/>
             </label>
             <button type="submit">Cập nhật</button>
-            <!--
-            <h2>Quên mật khẩu</h2>
-            <input type="text" id="forgotUser" placeholder="Tài khoản hoặc email" required>
-            <button type="submit">Gửi yêu cầu</button>
-            -->
         </form>
         <!-- Form đổi mật khẩu -->
-        <form id="resetForm" class="log-box hidden">
+        <form id="resetForm" hidden>
             <h2>Đổi mật khẩu</h2>
             <label>Mật khẩu hiện tại:
             <input type="password" id="oldP" required/>
@@ -51,6 +52,11 @@
                 <input type="password" id="xacnhan" required/>
             </label>
             <button type="submit">Cập nhật</button>
+        </form>
+        <!-- Form đăng xuất-->
+        <form id="logoutForm" hidden>
+            <h2>Bạn có chắc muốn đăng xuất?</h2>
+            <button type="submit">Đăng xuất</button>
         </form>
 
         <script src="../static/form.js"></script>
