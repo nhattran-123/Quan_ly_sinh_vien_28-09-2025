@@ -228,8 +228,8 @@ def classSections():
             "Thực hành":course.practice_hours,
             "Phòng":vtri_phong,
             "Số học sinh tối đa":i.max_students,
-            "Ngày bắt đầu": i.start_date.strftime("%d-%m-%Y") if c.start_date else None,
-            "Ngày kết thúc": i.end_date.strftime("%d-%m-%Y") if c.end_date else None
+            "Ngày bắt đầu": i.start_date.strftime("%d-%m-%Y") if i.start_date else None,
+            "Ngày kết thúc": i.end_date.strftime("%d-%m-%Y") if i.end_date else None
         })
         dem+=1
     if not list_class:
