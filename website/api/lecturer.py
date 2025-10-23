@@ -228,8 +228,8 @@ def classSections():
             "Thực hành":course.practice_hours,
             "Phòng":vtri_phong,
             "Số học sinh tối đa":i.max_students,
-            "Ngày bắt đầu":i.start_date.strftime("%d-%m-%Y"),
-            "Ngày kết thúc":i.end_date.strftime("%d-%m-%Y")
+            "Ngày bắt đầu": i.start_date.strftime("%d-%m-%Y") if c.start_date else None,
+            "Ngày kết thúc": i.end_date.strftime("%d-%m-%Y") if c.end_date else None
         })
         dem+=1
     if not list_class:
@@ -274,7 +274,7 @@ def list_student(class_id):
     if not danh_sach:
         return jsonify({"message": "Không có sinh viên nào trong lớp này hoặc ID lớp không hợp lệ."}), 404
     else:
-        return jsonify(danh_sach)
+        return jsonify(danh_sach), 200 
 
 @lecturer_bp.route("/list_student/export-excel/<class_id>", methods=["GET"])
 @fresh_login_required
