@@ -2,9 +2,8 @@ from flask import Blueprint, jsonify, request,send_file
 from flask_login import fresh_login_required, current_user
 from .. import db
 from io import BytesIO
-from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Terms,Grade,Assignment,AssignmentType,AssignmentWeight
+from ..models import Lecturer,User,ClassSection,Enrollment,Student,Room,Course,Grade,Assignment,AssignmentWeight
 from collections import Counter
-#,Department,Exam
 from datetime import datetime
 from .. import login_manager
 import pandas as pd

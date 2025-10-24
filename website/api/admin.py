@@ -4,9 +4,7 @@ from .. import db
 from io import BytesIO
 from werkzeug.security import generate_password_hash
 from datetime import datetime
-# Giả sử bạn đã import các model này ở đâu đó, ví dụ: from ..models import User, Department, Lecturer
 from ..models import User, Department, Lecturer, Student
-from collections import Counter
 from .. import login_manager
 import pandas as pd
 from sqlalchemy.exc import IntegrityError # Cần import để bắt lỗi CSDL
