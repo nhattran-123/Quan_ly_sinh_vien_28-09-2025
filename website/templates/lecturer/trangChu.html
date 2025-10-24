@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trang Giảng Viên</title>
+    <link rel="stylesheet" href="../../static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Xin chào Giảng Viên</h1>
+        <p>ID: <span id="userId">Đang tải...</span></p>
+        <p>Tên: <span id="userName">Đang tải...</span></p>
+        <p>Vai trò: <span id="userRole">Đang tải...</span></p>
+         <hr>
+        <form id="logoutForm">
+            <button type="submit">Đăng xuất</button>
+        </form>
+    </header>
+     <main>
+        <article>
+            <h2>Thông tin Giảng Viên</h2>
+            <p>Chào mừng bạn đến với trang giảng viên!</p>
+             <h3>Thông tin chi tiết (Ví dụ):</h3>
+             <div id="lecturerDetails">Đang tải chi tiết...</div>
+        </article>
+        <aside>
+             <h2>Tính năng</h2>
+             <ul class="chuyen">
+                 <li class="m1"><a href="trangChu.html">Trang chủ</a></li>
+                  <li><a href="#">Quản lý lớp học</a></li>
+                  <li><a href="#">Quản lý điểm</a></li>
+                  <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+                  <li><a href="#" onclick="document.getElementById('logoutForm').requestSubmit();">Đăng xuất</a></li>
+             </ul>
+         </aside>
+     </main>
+
+    <script src="../../static/form.js"></script>
+    <script>
+        // Lấy thông tin user từ sessionStorage
+        const userId = sessionStorage.getItem('userId');
+        const userName = sessionStorage.getItem('userName');
+        const userRole = sessionStorage.getItem('userRole');
+
+        // Hiển thị thông tin cơ bản
+        document.getElementById('userId').textContent = userId || 'Không có';
+        document.getElementById('userName').textContent = userName || 'Không có';
+        document.getElementById('userRole').textContent = userRole || 'Không có';
+
+         // Gọi API lấy thông tin chi tiết của giảng viên (ví dụ)
+         if (userId && userRole === 'lecturer') {
+              fetch('/api/lecturer/userinfor', { method: 'GET', credentials: 'include' })
+                 .then(response => {
+                     if (response.status === 401) window.location.href = "../index.html";
+                     if (!response.ok) throw new Error('Không thể tải chi tiết');
+                     return response.json();
+                 })
+                 .then(data => {
+                     const detailsDiv = document.getElementById('lecturerDetails');
+                     detailsDiv.innerHTML = `
+                         <p>ID: ${data.id || ''}</p>
+                         <p>Họ tên: ${data['Họ và Tên'] || ''}</p>
+                         <p>Ngày sinh: ${data['Ngày sinh'] || ''}</p>
+                         <p>Email: ${data.email || ''}</p>
+                         <p>Khoa: ${data.details?.['Tên Khoa'] || ''}</p>
+                         <p>Chức vụ: ${data.details?.['Chức vụ'] || ''}</p>
+                     `;
+                 })
+                 .catch(error => {
+                      console.error("Lỗi tải chi tiết GV:", error);
+                      document.getElementById('lecturerDetails').textContent = "Lỗi tải thông tin chi tiết.";
+                 });
+         } else if (!userId) {
+              window.location.href = "../index.html";
+         }
+
+        // Gọi hàm Logout từ form.js
+        Logout();
+    </script>
+</body>
+</html>

@@ -6,9 +6,8 @@
         <link rel="stylesheet" href="../static/style.css">
     </head>
     <body class="login-box">
-        
-        <!-- Form đăng nhập. ('hidden' là ẩn) -->
-        <form id="loginForm" hidden action="http://127.0.0.1:5000/api/auth/login" method="post">
+
+        <form id="loginForm">
             <h2>Đăng nhập</h2>
             <label>Tên đăng nhập:
                 <input type="text" id="id" required/>
@@ -17,9 +16,9 @@
                 <input type="password" id="password" required/>
             </label>
             <button type="submit">Đăng nhập</button>
-            <p><a href="#" onclick="showForm('forgot')">Quên mật khẩu?</a></p>
+            <p><a href="#forgot" onclick="showForm('forgot')">Quên mật khẩu?</a></p>
         </form>
-        <!-- Form quên mật khẩu -->
+
         <form id="forgotForm" hidden>
             <h2>Quên mật khẩu</h2>
             <label>Email:
@@ -32,9 +31,10 @@
                 <input type="password" id="f-xacnhan" required/>
             </label>
             <button type="submit">Cập nhật</button>
+            <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
         </form>
-        <!-- Form đổi mật khẩu -->
-        <form id="resetForm" hidden action="http://127.0.0.1:5000/api/auth/set_password" method="post">
+
+        <form id="resetForm" hidden>
             <h2>Đổi mật khẩu</h2>
             <label>Mật khẩu hiện tại:
             <input type="password" id="oldP" required/>
@@ -42,16 +42,19 @@
             <label>Mật khẩu mới:
                 <input type="password" id="newP" required/>
             </label>
-                <label>Xác nhận mật khẩu mới:
+            <label>Xác nhận mật khẩu mới:
                 <input type="password" id="xacnhan" required/>
             </label>
             <button type="submit">Cập nhật</button>
+             <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
         </form>
-        <!-- Form đăng xuất-->
-        <form id="logoutForm" hidden action="http://127.0.0.1:5000/api/auth/logout" method="POST">
+
+        <form id="logoutForm" hidden>
             <h3>Bạn chắc chắn muốn đăng xuất?</h3>
             <button type="submit">Đăng xuất</button>
+             <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
         </form>
+
         <script src="../static/form.js"></script>
     </body>
 </html>

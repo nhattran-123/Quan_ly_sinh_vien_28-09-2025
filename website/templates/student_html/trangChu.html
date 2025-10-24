@@ -1,61 +1,60 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <title>Thông tin sinh viên</title>
-  <link rel="stylesheet" href="../../static/style.css">
-</head>
-<body>
-  <header>
-    <h1>Xin chào</h1>
-  </header>
-  <main>
-    <article>
-      <header>
-        <h2>Trang chủ</h2>
-      </header>
-      <article>
-        <table>
-          <thead>Thông tin sinh viên</thead>
-          <tbody id="student-info">
-            <tr><td>Họ tên:</td><td id="full_name"></td></tr>
-            <tr><td>Mã SV:</td><td id="student_id"></td></tr>
-            <tr><td>Giới tính:</td><td id="gender"></td></tr>
-            <tr><td>Ngày sinh:</td><td id="date_of_birth"></td></tr>
-            <tr><td>Email:</td><td id="email"></td></tr>
-            <tr><td>Quê quán:</td><td id="hometown"></td></tr>
-            <tr><td>Địa chỉ thường trú:</td><td id="address"></td></tr>
-            <tr><td>Số CCCD:</td><td id="cccd"></td></tr>
-            <tr><td>Trạng thái học:</td><td id="status"></td></tr>
-          </tbody>
-        </table>
-      </article>
-      <article>
-        <table>
-          <thead>Thông tin khóa học</thead>
-          <tbody>
-            <tr><td>Ngành:</td><td id="department"></td></tr>
-            <tr><td>Khoa:</td><td id="faculty"></td></tr>
-            <tr><td>Bậc hệ đào tạo:</td><td id="education_level"></td></tr>
-            <tr><td>Niên khóa:</td><td id="entry_year"></td></tr>
-          </tbody>
-        </table>
-      </article>
-    </article>
-    <aside>
-      <header>
-        <h2>Tính năng</h2>
-      </header>
-      <ul class="chuyen">
-        <li><a href="../index.html#reset" id="">Đổi mật khẩu</a></li>
-        <li class="m1"><a href="trangChu.html">Trang chủ</a></li>
-        <li><a href="newInfo.html">Cập nhập thông tin</a></li>
-        <li><a href="diem.html">Kết quả học tập</a></li>
-        <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
-        <li><a href="../index.html#logout" id="">Đăng xuất</a></li>
-      </ul>
-    </aside>
-  </main>
-  <script src='../../static/form.js'></script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Trang tài khoản</title>
+        <link rel="stylesheet" href="../static/style.css">
+    </head>
+    <body class="login-box">
+
+        <form id="loginForm">
+            <h2>Đăng nhập</h2>
+            <label>Tên đăng nhập:
+                <input type="text" id="id" required/>
+            </label>
+            <label>Mật khẩu:
+                <input type="password" id="password" required/>
+            </label>
+            <button type="submit">Đăng nhập</button>
+            <p><a href="#forgot" onclick="showForm('forgot')">Quên mật khẩu?</a></p>
+        </form>
+
+        <form id="forgotForm" hidden>
+            <h2>Quên mật khẩu</h2>
+            <label>Email:
+                <input type="email" id="email" required/>
+            </label>
+            <label>Mật khẩu mới:
+                <input type="password" id="f-newP" required/>
+            </label>
+            <label>Xác nhận mật khẩu mới:
+                <input type="password" id="f-xacnhan" required/>
+            </label>
+            <button type="submit">Cập nhật</button>
+            <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
+        </form>
+
+        <form id="resetForm" hidden>
+            <h2>Đổi mật khẩu</h2>
+            <label>Mật khẩu hiện tại:
+            <input type="password" id="oldP" required/>
+            </label>
+            <label>Mật khẩu mới:
+                <input type="password" id="newP" required/>
+            </label>
+            <label>Xác nhận mật khẩu mới:
+                <input type="password" id="xacnhan" required/>
+            </label>
+            <button type="submit">Cập nhật</button>
+             <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
+        </form>
+
+        <form id="logoutForm" hidden>
+            <h3>Bạn chắc chắn muốn đăng xuất?</h3>
+            <button type="submit">Đăng xuất</button>
+             <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
+        </form>
+
+        <script src="../static/form.js"></script>
+    </body>
 </html>
