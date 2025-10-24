@@ -8,10 +8,13 @@
 <body>
   <h2>Danh sách sinh viên</h2>
   <a href="monA.html">Quay lại</a>
+  <!--Khi vào từ trang monA.html, link có dạng ví dụ như: ds_banHoc.html?class_id=L01&term_id=20241 -->
+  <button id="excel_out">Xuất file Excel</button>
+
   <form>
     <table class="danhSach">
       <thead><tr><th>STT</th><th>Họ tên</th><th>Mã sinh viên</th><td>Email</td><td>Ngày sinh</td></tr></thead>
-      <tbody id="classmate">
+      <tbody id="classmate" data-class="" data-term="">
         <!-- Dữ liệu sinh viên sẽ được JS thêm vào đây -->
       </tbody>
     </table>

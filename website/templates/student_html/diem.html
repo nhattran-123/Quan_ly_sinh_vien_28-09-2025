@@ -6,36 +6,31 @@
   <link rel="stylesheet" href="../../static/style.css">
 </head>
 <body>  
-  <!--chưa lấy dữ liệu, liên kết .js -->
   <main>
     <article>
       <header>
         <h2>Kết quả học tập</h2>
+        <label for="termSelect">Kỳ học:</label>
+        <select id="termSelect"></select>
       </header>
-          <table class="danhSach">
-            <thead><tr><th>Môn học</th><th>Giữa kỳ</th><th>Cuối kỳ</th><th>Tổng kết</th></tr></thead>
-          <!-- for ...-->
-            <tbody>
-              <tr>
-              <td>...</td>
-              <td>...</td>
-              <td>...</td>
-              <td>...</td>
-              </tr>
-            </tbody>
-          </table>
+      <table class="danhSach">
+        <thead><tr><th>Môn học</th><th>Giữa kỳ</th><th>Cuối kỳ</th><th>Tổng kết</th></tr></thead>
+        <tbody id="gradeTableBody">
+          <!-- JS sẽ thêm các dòng dữ liệu -->
+        </tbody>
+      </table>
     </article>
     <aside>
       <header>
         <h2>Tính năng</h2>
       </header>
       <ul class="chuyen">
-        <li><a href="../index.html#resetForm" id="">Đổi mật khẩu</a></li>
+        <li><a href="../index.html#reset" id="">Đổi mật khẩu</a></li>
         <li><a href="trangChu.html">Trang chủ</a></li>
         <li><a href="newInfo.html">Cập nhập thông tin</a></li>
         <li class="m1"><a href="diem.html">Kết quả học tập</a></li>
         <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
-        <li><a href="../index.html#logoutForm" id="">Đăng xuất</a></li>
+        <li><a href="../index.html#logout" id="">Đăng xuất</a></li>
       </ul>
     </aside>
   </main>
