@@ -40,7 +40,7 @@ def login():
         "message": "Đăng nhập thành công",
         "id": user.id,
         "Họ và Tên": user.full_name,
-        "Chức danh": user.role
+        "role": user.role
     }), 200)
 
     # Đặt cookie (tùy chỉnh thêm, ví dụ 1h)
