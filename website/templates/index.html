@@ -40,7 +40,7 @@
             <button type="submit">Cập nhật</button>
         </form>
         <!-- Form đổi mật khẩu -->
-        <form id="resetForm" hidden>
+        <form id="resetForm" hidden action="http://127.0.0.1:5000/api/auth/set_password" method="post">
             <h2>Đổi mật khẩu</h2>
             <label>Mật khẩu hiện tại:
             <input type="password" id="oldP" required/>
@@ -54,11 +54,10 @@
             <button type="submit">Cập nhật</button>
         </form>
         <!-- Form đăng xuất-->
-        <form id="logoutForm" hidden>
-            <h2>Bạn có chắc muốn đăng xuất?</h2>
+        <form id="logoutForm" hidden action="http://127.0.0.1:5000/api/auth/logout" method="POST">
+            <h3>Bạn chắc chắn muốn đăng xuất?</h3>
             <button type="submit">Đăng xuất</button>
         </form>
-
         <script src="../static/form.js"></script>
     </body>
 </html>

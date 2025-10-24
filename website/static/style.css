@@ -32,11 +32,6 @@ button { /* các ô cập nhật, đăng nhập...*/
     background-color: #ffffff;
 }
 
-/* các form ẩn tro
-ng templates/index.html*/
-.hidden {
-    display: none;
-}
 /* định dạng bố cục trang*/
 main {
     display: flex;
