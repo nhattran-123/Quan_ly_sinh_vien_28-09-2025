@@ -68,7 +68,7 @@ def update_profile():
             except ValueError:
                 return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
         db.session.commit()
-        return jsonify({"message": "Cập nhật thông tin giảng viên thành công"}), 200
+        return jsonify({"message": "Cập nhật thông tin sinh viên thành công"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Lỗi CSDL", "message": str(e)}), 500

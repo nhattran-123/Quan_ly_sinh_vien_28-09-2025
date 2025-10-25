@@ -7,7 +7,7 @@
     </head>
     <body class="login-box">
 
-        <form id="loginForm">
+        <form id="loginForm" hidden>
             <h2>Đăng nhập</h2>
             <label>Tên đăng nhập:
                 <input type="text" id="id" required/>
@@ -15,8 +15,7 @@
             <label>Mật khẩu:
                 <input type="password" id="password" required/>
             </label>
-            <button type="submit">Đăng nhập</button>
-            <p><a href="#forgot" onclick="showForm('forgot')">Quên mật khẩu?</a></p>
+            <button type="submit">Đăng nhập</button>           
         </form>
 
         <form id="forgotForm" hidden>
@@ -31,7 +30,6 @@
                 <input type="password" id="f-xacnhan" required/>
             </label>
             <button type="submit">Cập nhật</button>
-            <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
         </form>
 
         <form id="resetForm" hidden>
@@ -45,14 +43,12 @@
             <label>Xác nhận mật khẩu mới:
                 <input type="password" id="xacnhan" required/>
             </label>
-            <button type="submit">Cập nhật</button>
-             <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
+            <button type="submit">Cập nhật</button>   
         </form>
 
         <form id="logoutForm" hidden>
             <h3>Bạn chắc chắn muốn đăng xuất?</h3>
             <button type="submit">Đăng xuất</button>
-             <p><a href="#login" onclick="showForm('login')">Quay lại Đăng nhập</a></p>
         </form>
 
         <script src="../static/form.js"></script>

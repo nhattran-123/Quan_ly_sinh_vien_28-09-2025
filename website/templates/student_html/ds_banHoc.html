@@ -6,19 +6,33 @@
   <link rel="stylesheet" href="../../static/style.css">
 </head>
 <body>
-  <h2>Danh sách sinh viên</h2>
-  <a href="monA.html">Quay lại</a>
-  <!--Khi vào từ trang monA.html, link có dạng ví dụ như: ds_banHoc.html?class_id=L01&term_id=20241 -->
-  <button id="excel_out">Xuất file Excel</button>
+  <main>
+    <header>
+      <h2>Danh sách sinh viên trong lớp</h2>
+    </header>
 
-  <form>
-    <table class="danhSach">
-      <thead><tr><th>STT</th><th>Họ tên</th><th>Mã sinh viên</th><td>Email</td><td>Ngày sinh</td></tr></thead>
-      <tbody id="classmate" data-class="" data-term="">
-        <!-- Dữ liệu sinh viên sẽ được JS thêm vào đây -->
-      </tbody>
-    </table>
-  </form>
+    <section>
+      <!-- Nút xuất file -->
+      <button id="excel_out">📄 Xuất file Excel</button>
+
+      <!-- Bảng danh sách sinh viên -->
+      <table class="danhSach">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Họ tên</th>
+            <th>Mã sinh viên</th>
+            <th>Email</th>
+            <th>Ngày sinh</th>
+          </tr>
+        </thead>
+        <tbody id="classmate" data-class="" data-term="">
+          <!-- Dữ liệu sẽ được form.js thêm vào -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
   <script src="../../static/form.js"></script>
 </body>
 </html>
