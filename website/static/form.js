@@ -35,19 +35,6 @@ function showForm(formName) {
     document.querySelectorAll("form").forEach(f => f.hidden = true);
     if (nameForm) nameForm.hidden = false;
 }
-
-// Xử lý tính năng liên kết với trang khác
-window.addEventListener('DOMContentLoaded', () => {
-    const hash = window.location.hash;// ví dụ: #logout hoặc #reset
-  //  showForm('setInformationForm');
-    if (hash) {
-        const formId = hash.replace('#', ''); // bỏ dấu #
-        showForm(formId);
-    }
-    else{
-        showForm('login');
-    }
-});
 //2. Đăng nhập
 function login() {
     const lg = document.getElementById('loginForm');
@@ -101,14 +88,16 @@ function Logout() {
     out.addEventListener("submit", function(e){
         e.preventDefault();
 
-        fetch(`{${API_BASE}/api/auth/logout}`, {method: "POST", credentials: "include"})
+        fetch(`${API_BASE}/api/auth/logout`, {method: "POST", credentials: "include"})
         .then(response => {
             if(!response.ok) throw new Error("Logout không thành công");
             return response.json();
         })
         .then(data => {
             alert(data.message || "Đăng xuất thành công");
+            // Cập nhật hash và hiện form login
             window.location.href="index.html#login";
+            showForm('login');
         })
         .catch(error => {
             console.error("Lỗi:",error);
@@ -143,6 +132,7 @@ function passReset() {
         fetch(`${API_BASE}/api/auth/set_password`,{
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
+            credentials: "include",
             body: JSON.stringify({
                 password: oldP,
                 new_password: newMK
@@ -153,6 +143,9 @@ function passReset() {
             if(data.message){
                 alert(data.message); // Đổi mật khẩu thành công
                 window.location.href = "index.html#login"; // Chuyển về trang đăng nhập
+                // Cập nhật hash và hiện form login
+                window.location.href="index.html#login";
+                showForm('login');
             } else if(data.error){
                 alert("Lỗi: "+data.error);// Thông báo trả về từ backend
             }
@@ -685,8 +678,15 @@ function attendanceList() {
 
 // Gọi tất cả các hàm 1 lần khi DOM sẵn sàng
 document.addEventListener('DOMContentLoaded',function(){
+    // Xác định form cần hiển thị (dựa vào hash), hỗ trợ xử lý chuyển trang
+    const hash = window.location.hash.replace('#', '').trim();
+
     if (window.location.pathname.includes("index.html") || window.location.pathname === "/") {
-        showForm('login');
+        if (hash) {
+            showForm(hash);
+        } else {
+            showForm('login');
+        }
     }
     passReset();
     login();
