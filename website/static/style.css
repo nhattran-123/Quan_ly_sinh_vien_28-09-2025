@@ -1,36 +1,185 @@
-/* Thử style của bên sinh viên */
+/* --- CÀI ĐẶT CHUNG --- */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f7faff; /* Nền trắng xanh rất nhạt */
+    overflow: hidden; /* Ẩn scrollbar để các vòng tròn trang trí không bị vỡ */
+    position: relative;
+    height: 100vh;
+}
+
+/* --- BỐ CỤC TRANG ĐĂNG NHẬP MỚI --- */
+.login-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    align-items: center; /* Căn giữa dọc */
+    justify-content: center; /* Căn giữa ngang */
+    gap: 5%; /* Khoảng cách giữa 2 cột */
+    padding: 20px;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 2;
+}
+
+/* CỘT BÊN TRÁI (THÔNG TIN) */
+.info-side {
+    flex-basis: 400px; /* Cố định chiều rộng */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.info-side .main-logo {
+    width: 100px; /* Kích thước logo nón cử nhân */
+    margin-bottom: 20px;
+}
+
+.info-side .brand-name {
+    font-size: 3.5rem; /* Chữ "Classe369" */
+    color: #c00; /* Màu xanh đậm */
+    margin: 0;
+    font-weight: bold;
+}
+
+.info-side p {
+    font-size: 0.9rem;
+    color: #333;
+    margin: 5px 0 0 0;
+}
+
+/* CỘT BÊN PHẢI (FORM) */
+.form-side {
+    flex-basis: 400px; /* Cố định chiều rộng */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* BOX CHỨA FORM */
+.form-box {
+    border: 1px solid #e0e0e0;
+    padding: 30px 40px;
+    border-radius: 20px; /* Bo tròn nhiều */
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 10px 30px rgba(0, 74, 153, 0.1); /* Đổ bóng xanh nhẹ */
+    box-sizing: border-box;
+}
+
+.form-box .form-logo {
+    width: 80px; /* Logo tròn xanh nhỏ */
+    display: block;
+    margin: 0 auto 20px auto;
+}
+
+.form-box h2 {
+    text-align: center;
+    color: #c00; /* Màu xanh đậm */
+    margin-top: 0;
+    margin-bottom: 30px;
+    font-size: 1.2rem;
+    letter-spacing: 1px; /* Giãn cách chữ */
+}
+
+.form-box h3 { /* Dành cho form logout */
+    text-align: center;
+    font-weight: normal;
+    color: #333;
+}
+
+/* --- CÁC THÀNH PHẦN FORM (Thay thế code cũ) --- */
+
+/* Bỏ label text đi, vì đã dùng placeholder */
 label { 
-    display: block; 
-    margin-top: 10px; 
+    display: none; 
 }
-input[type="text"], input[type="email"], input[type="password"] {
-    width: 100%; 
-    padding: 5px; 
+
+/* Bọc icon và input */
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #c00; /* Màu icon xanh */
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px 15px 12px 40px; /* Chừa chỗ cho icon */
     margin-top: 5px;
+    box-sizing: border-box;
+    border: none; /* Bỏ viền */
+    border-bottom: 2px solid #ccc; /* Chỉ giữ viền dưới */
+    font-size: 1rem;
+    transition: border-color 0.3s;
 }
-button { /* các ô cập nhật, đăng nhập...*/
-    background-color: #ee8c8c;
-    margin-top: 10px; 
-    padding: 7px 10px; 
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    outline: none; /* Bỏ viền cam khi click */
+    border-bottom-color: #c00; /* Đổi màu viền dưới khi focus */
+}
+
+/* Xóa placeholder mặc định của form.js */
+input::placeholder {
+    color: #888;
+}
+
+/* Nút bấm */
+button {
+    background-color: #c00; /* MÀU XANH ĐẬM */
+    color: white;
+    margin-top: 20px;
+    padding: 12px 10px;
     width: 100%;
     font-size: large;
+    border: none;
+    border-radius: 10px; /* Bo tròn */
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
-/* khung đăng nhập,...*/
-.login-box {
-    display: flex;
-    justify-content: center; /* căn giữa ngang */
-    align-items: center;     /* căn giữa dọc */
-    height: 100vh;           /* chiếm toàn bộ chiều cao trình duyệt */
-    margin: 0;
-    background-color: #ffffff; /* nền xám nhẹ */
+
+button:hover {
+    background-color: #c00; /* Xanh đậm hơn khi hover */
 }
-.login-box form {
-    border: 1px solid #000000; 
-    padding: 30px; 
-    border-radius: 8px; 
-    width: 300px; 
-    background-color: #ffffff;
+
+/* --- VÒNG TRÒN TRANG TRÍ --- */
+.circle {
+    position: absolute;
+    border: 30px solid rgba(0, 86, 179, 0.05); /* Màu xanh nhạt, trong suốt */
+    border-radius: 50%;
+    z-index: 1;
 }
+.circle-1 {
+    width: 300px;
+    height: 300px;
+    top: -100px;
+    left: -100px;
+}
+.circle-2 {
+    width: 400px;
+    height: 400px;
+    bottom: -150px;
+    right: -150px;
+}
+
+
+/* =====================================================
+  PHẦN DƯỚI ĐÂY LÀ CSS CŨ CỦA BẠN
+  (Giữ lại để các trang khác không bị vỡ giao diện) 
+=====================================================
+*/
 
 /* định dạng bố cục trang*/
 main {

@@ -1,56 +1,71 @@
 <!DOCTYPE html>
 <html lang="vi">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Trang tài khoản</title>
-        <link rel="stylesheet" href="../static/style.css">
-    </head>
-    <body class="login-box">
+<head>
+    <meta charset="UTF-8" />
+    <title>Đăng nhập</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
 
-        <form id="loginForm" hidden>
-            <h2>Đăng nhập</h2>
-            <label>Tên đăng nhập:
-                <input type="text" id="id" required/>
-            </label>
-            <label>Mật khẩu:
-                <input type="password" id="password" required/>
-            </label>
-            <button type="submit">Đăng nhập</button>           
-        </form>
+    <div class="login-container">
+        <div class="info-side">      
+            <h1 class="brand-name">Class</h1>
+            <p>Hệ thống hỗ trợ quản lý sinh viên</p>
+            <p>Xây dựng và phát triển bởi Nhóm 4-Python 9</p>
+            <p>Học viện Công nghệ Bưu chính Viễn Thông - Miền Bắc</p>
+        </div>
 
-        <form id="forgotForm" hidden>
-            <h2>Quên mật khẩu</h2>
-            <label>Email:
-                <input type="email" id="email" required/>
-            </label>
-            <label>Mật khẩu mới:
-                <input type="password" id="f-newP" required/>
-            </label>
-            <label>Xác nhận mật khẩu mới:
-                <input type="password" id="f-xacnhan" required/>
-            </label>
-            <button type="submit">Cập nhật</button>
-        </form>
+        <div class="form-side">
+            <div class="form-box">
+                
+                <form id="loginForm" hidden>
+                    <img src="../static/logo-ptit.webp" alt="Logo" class="form-logo">
+                    <h2>ĐĂNG NHẬP</h2>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="id" placeholder="ID" required/>
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" placeholder="Mật khẩu" required/>
+                    </div>
+                    
+                    <button type="submit">Đăng nhập</button>           
+                </form>
 
-        <form id="resetForm" hidden>
-            <h2>Đổi mật khẩu</h2>
-            <label>Mật khẩu hiện tại:
-            <input type="password" id="oldP" required/>
-            </label>
-            <label>Mật khẩu mới:
-                <input type="password" id="newP" required/>
-            </label>
-            <label>Xác nhận mật khẩu mới:
-                <input type="password" id="xacnhan" required/>
-            </label>
-            <button type="submit">Cập nhật</button>   
-        </form>
+                <form id="resetForm" hidden>
+                    <h2>Đổi mật khẩu</h2>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="oldP" placeholder="Mật khẩu hiện tại" required/>
+                    </div>
+        
+                    <div class="input-group">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="newP" placeholder="Mật khẩu mới" required/>
+                    </div>
+        
+                    <div class="input-group">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="xacnhan" placeholder="Xác nhận mật khẩu mới" required/>
+                    </div>
+        
+                    <button type="submit">Cập nhật</button>   
+                </form>
 
-        <form id="logoutForm" hidden>
-            <h3>Bạn chắc chắn muốn đăng xuất?</h3>
-            <button type="submit">Đăng xuất</button>
-        </form>
+                <form id="logoutForm" hidden>
+                    <img src="../static/logo-ptit.webp" alt="Logo" class="form-logo">
+                    <h3>Bạn chắc chắn muốn đăng xuất?</h3>
+                    <button type="submit">Đăng xuất</button>
+                </form>
 
-        <script src="../static/form.js"></script>
-    </body>
+            </div> </div> </div> <script src="../static/form.js"></script>
+</body>
 </html>
