@@ -64,7 +64,7 @@ def update_profile():
         dob=data.get('date_of_birth')
         if dob:
             try:
-                current_user.date_of_birth = datetime.strptime(dob, "%d-%m-%Y").date()
+                current_user.date_of_birth = datetime.strptime(dob, "%d-%m-%Y")
             except ValueError:
                 return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
         db.session.commit()

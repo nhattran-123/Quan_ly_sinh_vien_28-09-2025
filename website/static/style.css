@@ -403,21 +403,99 @@ table.danhSach th {
     background-color: #e9ecef; /* Nền xám nhạt cho header bảng */
     font-weight: bold;
 }
+/* --- CSS RIÊNG CHO TRANG CẬP NHẬT THÔNG TIN --- */
 
-/* Style cho class .m1 cũ trong aside cũ (Nếu sidebar mới không dùng thì có thể bỏ) */
-/* .m1 {
-    color: #ebb0b0;
-    background-color: #ebb0b0;
-} */
-/* Style cũ cho .chuyen (Nếu sidebar mới không dùng thì có thể bỏ) */
-/* .chuyen ul {
-    list-style-type:none;
-    padding-left: 2px;
-    margin: 5px 0;
+/* Căn giữa form trong content area */
+.update-info-area {
+    display: flex;
+    justify-content: center; /* Căn giữa theo chiều ngang */
+    align-items: flex-start; /* Căn lề trên */
+    padding-top: 50px; /* Thêm khoảng cách phía trên */
 }
-.chuyen ul li {
-    color: black;
-    font-size: 16px;
-    line-height: 1.5;
-    padding: 5px 0;
-} */
+
+/* Style cho box chứa form */
+.form-container {
+    width: 100%;
+    max-width: 500px; /* Giới hạn chiều rộng tối đa của form */
+    padding: 30px 40px; /* Tăng padding */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Bóng đổ rõ hơn */
+}
+
+.form-title {
+    text-align: center; /* Căn giữa tiêu đề form */
+    border-bottom: none; /* Bỏ gạch chân tiêu đề */
+    margin-bottom: 30px; /* Tăng khoảng cách dưới tiêu đề */
+}
+
+/* Style cho từng nhóm label + input */
+.form-group {
+    margin-bottom: 25px; /* Tăng khoảng cách giữa các trường */
+}
+
+.form-group label {
+    display: block; /* Label chiếm 1 dòng riêng */
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 8px; /* Khoảng cách giữa label và input */
+    font-size: 0.95em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="date"] {
+    width: 100%;
+    padding: 12px 15px; /* Padding đều các bên */
+    box-sizing: border-box; /* Quan trọng để padding không làm tăng width */
+    border: 1px solid #ccc; /* Viền xám mờ */
+    border-radius: 5px; /* Bo góc nhẹ */
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Bỏ style chỉ viền dưới của trang đăng nhập */
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="date"] {
+    border-bottom: 1px solid #ccc; /* Đảm bảo có viền đầy đủ */
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="date"]:focus {
+    outline: none;
+    border-color: #c00; /* Đổi màu viền khi focus */
+    box-shadow: 0 0 5px rgba(192, 0, 0, 0.3); /* Thêm hiệu ứng shadow nhẹ */
+}
+
+/* Style cho input readonly */
+.form-group input[readonly] {
+    background-color: #e9ecef; /* Nền xám nhạt cho input không sửa được */
+    cursor: not-allowed;
+    border-color: #ced4da;
+}
+
+/* Style cho nút bấm "Thay Đổi" */
+.update-button {
+    background-color: #c00; /* Màu đỏ */
+    color: white;
+    margin-top: 30px; /* Tăng khoảng cách trên nút */
+    padding: 15px 10px; /* Tăng chiều cao nút */
+    width: 100%;
+    font-size: 1.2em; /* Tăng cỡ chữ nút */
+    font-weight: bold;
+    border: none;
+    border-radius: 25px; /* Bo tròn nhiều hơn */
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    box-shadow: 0 4px 10px rgba(192, 0, 0, 0.2); /* Đổ bóng cho nút */
+}
+
+.update-button:hover {
+    background-color: #a00; /* Đỏ đậm hơn khi hover */
+    transform: translateY(-2px); /* Nâng nút lên chút */
+}
+
+.update-button:active {
+    transform: translateY(0); /* Hạ nút xuống khi nhấn */
+    box-shadow: 0 2px 5px rgba(192, 0, 0, 0.3);
+}

@@ -2,43 +2,195 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <title>Sửa thông tin</title>
+  <title>Cập nhật thông tin</title>
   <link rel="stylesheet" href="../../static/style.css">
 </head>
 <body>
-  <main>
-    <article>
-      <h2>Sửa thông tin cá nhân</h2>
-      <form id="setInformationForm">
-        <label for="name">Họ tên:</label>
-        <input type="text" id="name" value="" readonly />
-<!-- id="name" để truy xuất bằng JS; value="" để bạn đổ dữ liệu động từ SQL; readonly ➜ không cho người dùng sửa-->
-        <label for="maSV">Mã SV:</label>
-        <input type="text" id="maSV" value="" readonly />
-        <label for="mail">Email(Có thể thay đổi):</label>
-        <input type="email" id="mail" value="" />
-        <label for="khoa">Khoa:</label>
-        <input type="text" id="khoa" value="" readonly />
-  <!--      <label for="phone">Số điện thoại:</label>
-        <input type="tel" id="phone" value="" placeholder="Không bắt buộc">    API Không sửa cái này-->
-        <!-- thêm phần sửa ngày sinh - API có-->
-        <button type="submit">Lưu</button>
-      </form>
-    </article>
-    <aside>
-      <header>
-        <h2>Tính năng</h2>
-      </header>
-      <ul class="chuyen">
-        <li><a href="../index.html#reset" id="">Đổi mật khẩu</a></li>
-        <li><a href="trangChu.html">Trang chủ</a></li>
-        <li class="m1"><a href="newInfo.html">Cập nhập thông tin</a></li>
-        <li><a href="diem.html">Kết quả học tập</a></li>
-        <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
-        <li><a href="../index.html#logout" id="">Đăng xuất</a></li>
-      </ul>
-    </aside>
-  </main>
+  <div class="page-container">
+    <header class="page-header">
+      <div class="header-left">
+        <h1>Xin chào, <span id="userName">Đang tải...</span></h1>
+      </div>
+      <div class="header-right">
+        Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+      </div>
+    </header>
+
+    <div class="page-body">
+      <aside class="sidebar-nav">
+        <ul>
+          <li><a href="trangChu.html">Trang chủ</a></li>
+          <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+          <li class="active"><a href="newInfo.html">Cập nhật thông tin</a></li>
+          <li><a href="lopTinChi.html">Các lớp đăng ký</a></li>
+          <li><a href="diem.html">Các môn đăng ký</a></li>
+          <li><a href="../index.html#logout">Đăng Xuất</a></li>
+        </ul>
+      </aside>
+
+      <main class="content-area update-info-area">
+        <div class="info-box shaded form-container">
+          <h2 class="content-title form-title">Cập nhật thông tin</h2>
+          <form id="setInformationForm">
+            <div class="form-group">
+              <label for="full_name">Họ và tên:</label>
+              <input type="text" id="full_name" value="Đang tải..."  />
+            </div>
+            <div class="form-group">
+              <label for="email">Email:</label>
+              <input type="email" id="email" value="Đang tải..." required />
+            </div>
+            <div class="form-group">
+              <label for="date_of_birth">Ngày sinh:</label>
+              <input type="date" id="date_of_birth" value="" required />
+               </div>
+
+            <button type="submit" class="update-button">Thay Đổi</button>
+          </form>
+        </div>
+      </main>
+    </div>
+
+    <footer class="page-footer">
+      Phiên bản 1
+    </footer>
+  </div>
+
   <script src="../../static/form.js"></script>
+  <script>
+    // Hàm này sẽ ghi đè hàm setProfile trong form.js
+    function setProfileModified() {
+      // (Nội dung hàm setProfileModified giữ nguyên như trước)
+      // ... (toàn bộ code của hàm setProfileModified bạn đang có) ...
+       if (!window.location.pathname.includes("newInfo.html")) return;
+
+       const apiUrl = `${API_BASE}/api/student/profile`;
+       const form = document.getElementById('setInformationForm');
+       if (!form) {
+           console.error("Form 'setInformationForm' not found!");
+           return;
+       }
+
+       const nameInput = document.getElementById("full_name");
+       const emailInput = document.getElementById('email');
+       const dobInput = document.getElementById('date_of_birth');
+       const userNameHeader = document.getElementById('userName');
+
+       // --- Hàm chuyển đổi định dạng ngày ---
+       function formatDate_DDMMYYYY_to_YYYYMMDD(dateString) {
+           if (!dateString || !/^\d{2}-\d{2}-\d{4}$/.test(dateString)) return "";
+           const parts = dateString.split('-');
+           return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+       }
+
+       function formatDate_YYYYMMDD_to_DDMMYYYY(dateString) {
+           if (!dateString) return "";
+           const parts = dateString.split('-');
+           return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-YYYY
+       }
+
+       // --- Gọi API GET để điền thông tin hiện tại ---
+       fetch(apiUrl, { method: "GET", credentials: "include" })
+         .then(response => {
+             if (!response.ok) {
+                 if (response.status === 401) {
+                     window.location.href = "../index.html";
+                     return Promise.reject('Chưa đăng nhập');
+                 }
+                 return response.json().then(err => { throw new Error(err.message || 'Lỗi tải dữ liệu'); });
+             }
+             return response.json();
+         })
+         .then(data => {
+             // KIỂM TRA LẠI TRƯỚC KHI GÁN VALUE
+             if (!userNameHeader || !nameInput || !emailInput || !dobInput) {
+                 console.error("One or more critical elements became null AFTER fetch!");
+                 alert("Lỗi giao diện nghiêm trọng. Vui lòng tải lại trang.");
+                 return;
+             }
+             const fullName = data["Họ và tên"] || "";
+             userNameHeader.textContent = fullName || 'Bạn';
+             nameInput.value = fullName;
+             emailInput.value = data["Email"] || "";
+             dobInput.value = formatDate_DDMMYYYY_to_YYYYMMDD(data["Ngày sinh"]);
+         })
+         .catch(err => {
+             if (err !== 'Chưa đăng nhập') {
+                 console.error("Lỗi khi tải thông tin:", err);
+                 alert("Không thể tải thông tin sinh viên: " + err.message);
+             }
+         });
+
+       // --- Xử lý sự kiện SUBMIT form (gọi PUT API) ---
+       form.addEventListener('submit', function (event) {
+         event.preventDefault();
+         const newFullName = nameInput.value.trim(); // Lấy tên từ input
+         const newEmail = emailInput.value.trim();
+         const newDobYYYYMMDD = dobInput.value;
+         const newDobDDMMYYYY = formatDate_YYYYMMDD_to_DDMMYYYY(newDobYYYYMMDD);
+
+         if (!newFullName || !newEmail || !newDobDDMMYYYY) { // Kiểm tra cả tên
+             alert("Vui lòng nhập đầy đủ Họ tên, Email và Ngày sinh.");
+             return;
+         }
+
+         const updatedInfo = {
+           full_name: newFullName, // Thêm tên vào data gửi đi
+           email: newEmail,
+           date_of_birth: newDobDDMMYYYY
+         };
+
+         // Gọi API PUT
+         fetch(apiUrl, {
+           method: 'PUT',
+           headers: { "Content-Type": "application/json" },
+           credentials: "include",
+           body: JSON.stringify(updatedInfo)
+         })
+         .then(response => response.json())
+         .then(data => {
+           if (data.error) {
+             alert("Cập nhật thất bại: " + (data.message || data.error));
+           } else {
+             alert(data.message || "Cập nhật thông tin thành công!");
+             // Cập nhật lại tên trên header nếu có thay đổi
+             if(userNameHeader.textContent !== newFullName) {
+                 userNameHeader.textContent = newFullName || 'Bạn';
+             }
+           }
+         })
+         .catch(err => {
+           console.error("Lỗi khi cập nhật:", err);
+           alert("Không thể gửi yêu cầu cập nhật. Lỗi: " + err.message);
+         });
+       });
+    }
+
+    // *** SỬA ĐOẠN DƯỚI ĐÂY ***
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ghi đè hàm setProfile trước
+        setProfile = setProfileModified;
+
+        // Hàm kiểm tra và gọi setProfileModified
+        function tryRunSetProfile() {
+            // Kiểm tra các phần tử quan trọng đã có chưa
+            const nameInput = document.getElementById("full_name");
+            const emailInput = document.getElementById('email');
+            const dobInput = document.getElementById('date_of_birth');
+            const userNameHeader = document.getElementById('userName');
+
+            if (nameInput && emailInput && dobInput && userNameHeader) {
+                console.log("Elements ready, running setProfileModified.");
+                setProfile(); // Gọi hàm đã được ghi đè
+            } else {
+                console.warn("Elements not ready yet, retrying in 10ms...");
+                setTimeout(tryRunSetProfile, 10); // Nếu chưa có, đợi 10ms rồi thử lại
+            }
+        }
+
+        // Bắt đầu kiểm tra và chạy
+        tryRunSetProfile();
+    });
+  </script>
 </body>
 </html>
