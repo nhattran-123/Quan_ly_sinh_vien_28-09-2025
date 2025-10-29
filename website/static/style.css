@@ -181,23 +181,23 @@ button:hover {
 =====================================================
 */
 
-/* định dạng bố cục trang*/
+/* định dạng bố cục trang
 main {
     display: flex;
     background-color: #ffffff;
 }
 /* nửa trang bên phải*/
-main article {
+/* main article {
     flex: 3;
     padding: 10px;
     border: 3px solid #000000 ;
-}
+} */
 /* Nửa trái của trang: chuyển đổi tính năng*/
-main aside{
+/* main aside{
     flex: 1;
     padding: 10px;
     border: 3px solid #000000;
-}
+} */ */
 .chuyen ul { 
     list-style-type:none; 
     padding-left: 2px; 
@@ -226,3 +226,198 @@ table.danhSach td {
   padding: 8px;
   text-align: left;
 }
+/* --- TỔNG THỂ TRANG --- */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa; /* Màu nền xám rất nhạt cho toàn trang */
+    color: #333;
+    display: flex; /* Sử dụng flexbox cho body */
+    flex-direction: column; /* Các thành phần con xếp dọc */
+    min-height: 100vh; /* Chiều cao tối thiểu bằng màn hình */
+    overflow-x: hidden; /* Tránh scroll ngang không mong muốn */
+}
+
+.page-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; /* Container chính chiếm hết không gian còn lại */
+}
+
+/* --- HEADER --- */
+.page-header {
+    background-color: #c00; /* Màu đỏ */
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between; /* Đẩy 2 phần tử con ra 2 bên */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    flex-shrink: 0; /* Không co header lại */
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: bold;
+}
+
+.page-header .header-right {
+    font-size: 0.9em;
+}
+
+/* --- BODY (SIDEBAR + CONTENT) --- */
+.page-body {
+    display: flex;
+    flex-grow: 1; /* Phần body chiếm hết không gian còn lại */
+}
+
+/* --- SIDEBAR MENU --- */
+.sidebar-nav {
+    flex: 0 0 250px; /* Chiều rộng cố định 250px, không co giãn */
+    background-color: #f8d7da; /* Màu đỏ rất nhạt */
+    padding: 20px 0; /* Padding trên dưới, không padding trái phải */
+    display: flex;
+    flex-direction: column; /* Các mục menu xếp dọc */
+}
+
+.sidebar-nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.sidebar-nav li {
+    margin-bottom: 10px; /* Khoảng cách giữa các mục menu */
+    padding: 0 15px; /* Padding trái phải cho nội dung bên trong li */
+}
+
+.sidebar-nav a {
+    display: block; /* Biến link thành block để chiếm cả dòng */
+    background-color: #c00; /* Nền nút màu đỏ */
+    color: white;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    font-size: 1.1em;
+    text-align: center;
+    transition: background-color 0.3s, transform 0.1s; /* Hiệu ứng khi hover */
+}
+
+.sidebar-nav a:hover {
+    background-color: #a00; /* Màu đỏ đậm hơn khi hover */
+    transform: translateY(-1px); /* Nâng nhẹ nút lên */
+}
+
+.sidebar-nav li.active a {
+    background-color: #800; /* Màu đỏ đậm nhất cho mục đang active */
+    font-weight: bold;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); /* Đổ bóng vào trong */
+}
+
+/* --- CONTENT AREA --- */
+.content-area {
+    flex-grow: 1; /* Chiếm hết không gian còn lại bên phải */
+    padding: 30px;
+    background-color: #f8f9fa; /* Nền xám nhạt */
+}
+
+.content-title {
+    color: #c00; /* Màu đỏ cho tiêu đề */
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.5em;
+    border-bottom: 2px solid #e9ecef; /* Đường gạch chân mờ */
+    padding-bottom: 5px;
+}
+
+.info-box {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: white; /* Nền trắng cho các box */
+    border-radius: 8px;
+}
+
+.info-box.bordered {
+     /* Viền tím nhạt như trong hình */
+     /* Bạn có thể thay đổi màu #e0cffc nếu muốn */
+    border: 1px solid #e0cffc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Bóng đổ nhẹ */
+}
+
+.info-box.shaded {
+    /* Không có viền, chỉ có bóng đổ */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Sử dụng Definition List (dl, dt, dd) để trình bày thông tin */
+.info-box dl {
+    margin: 0;
+    padding: 0;
+    display: grid; /* Sử dụng grid để căn chỉnh */
+    grid-template-columns: 150px auto; /* Cột label 150px, cột value tự động */
+    gap: 10px; /* Khoảng cách giữa các dòng */
+}
+
+.info-box dt {
+    font-weight: bold;
+    color: #555; /* Màu chữ label hơi xám */
+    text-align: left; /* Căn phải label */
+    padding-right: 10px; /* Khoảng cách giữa label và value */
+}
+
+.info-box dd {
+    margin: 0;
+    color: #333; /* Màu chữ value đậm hơn */
+}
+
+/* --- FOOTER --- */
+.page-footer {
+    padding: 10px 30px;
+    text-align: right;
+    font-size: 0.8em;
+    color: #6c757d; /* Màu xám */
+    border-top: 1px solid #dee2e6; /* Đường kẻ mờ phía trên footer */
+    background-color: #f8f9fa;
+    flex-shrink: 0; /* Không co footer */
+}
+
+/* --- CSS CŨ CẦN GIỮ LẠI (Nếu không dùng nữa có thể xóa bớt) --- */
+/* (Giữ lại các style cho table.danhSach, .chuyen, .m1 nếu các trang khác còn dùng) */
+/* Bỏ các style cũ cho header, main, main article, main aside vì đã có style mới */
+
+table.danhSach {
+  width: 100%;
+  border-collapse: collapse; /* gộp viền lại cho gọn */
+  margin-top: 15px; /* Thêm khoảng cách với tiêu đề */
+}
+
+table.danhSach th,
+table.danhSach td {
+  border: 1px solid #ccc; /* viền xám nhạt */
+  padding: 10px; /* Tăng padding */
+  text-align: left;
+}
+
+table.danhSach th {
+    background-color: #e9ecef; /* Nền xám nhạt cho header bảng */
+    font-weight: bold;
+}
+
+/* Style cho class .m1 cũ trong aside cũ (Nếu sidebar mới không dùng thì có thể bỏ) */
+/* .m1 {
+    color: #ebb0b0;
+    background-color: #ebb0b0;
+} */
+/* Style cũ cho .chuyen (Nếu sidebar mới không dùng thì có thể bỏ) */
+/* .chuyen ul {
+    list-style-type:none;
+    padding-left: 2px;
+    margin: 5px 0;
+}
+.chuyen ul li {
+    color: black;
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 5px 0;
+} */

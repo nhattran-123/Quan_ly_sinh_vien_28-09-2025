@@ -6,57 +6,111 @@
   <link rel="stylesheet" href="../../static/style.css">
 </head>
 <body>
-  <header>
-    <h1>Xin chào, <span id="userName">Đang tải...</span> </h1>
-     <hr>
-  </header>
-  <main>
-    <article>
-      <header>
-        <h2>Trang chủ</h2>
-      </header>
-      <article>
-        <table>
-          <thead>Thông tin sinh viên</thead>
-          <tbody id="student-info">
-            <tr><td>Họ tên:</td><td id="full_name"></td></tr>
-            <tr><td>Mã SV:</td><td id="student_id"></td></tr>
-    <!--   <tr><td>Giới tính:</td><td id="gender"></td></tr>   -->
-            <tr><td>Ngày sinh:</td><td id="date_of_birth"></td></tr>
-            <tr><td>Email:</td><td id="email"></td></tr>
-    <!--    <tr><td>Quê quán:</td><td id="hometown"></td></tr>
-            <tr><td>Địa chỉ thường trú:</td><td id="address"></td></tr>
-            <tr><td>Số CCCD:</td><td id="cccd"></td></tr>       -->
-          </tbody>
-        </table>
-      </article>
-      <article>
-        <table>
-          <thead>Thông tin khóa học</thead>
-          <tbody>
-            <tr><td>Khoa:</td><td id="department"></td></tr>
-    <!--    <tr><td>Ngành:</td><td id="faculty"></td></tr>
-            <tr><td>Bậc hệ đào tạo:</td><td id="education_level"></td></tr>  -->
-            <tr><td>Niên khóa:</td><td id="entry_year"></td></tr>
-            <tr><td>Trạng thái học:</td><td id="status"></td></tr>
-          </tbody>
-        </table>
-      </article>
-    </article>
-    <aside>
-      <header>
-        <h2>Tính năng</h2>
-      </header>
-      <ul class="chuyen">
-        <li><a href="../index.html#reset" id="">Đổi mật khẩu</a></li>
-        <li class="m1"><a href="trangChu.html">Trang chủ</a></li>
-        <li><a href="newInfo.html">Cập nhập thông tin</a></li>
-        <li><a href="diem.html">Kết quả học tập</a></li>
-        <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
-        <li><a href="../index.html#logout" id="">Đăng xuất</a></li>
-      </ul>
-    </aside>
-  </main>
+  <div class="page-container">
+    <header class="page-header">
+      <div class="header-left">
+        <h1>Xin chào, <span id="userName">Đang tải...</span></h1>
+      </div>
+      <div class="header-right">
+        Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+      </div>
+    </header>
+
+    <div class="page-body">
+      <aside class="sidebar-nav">
+        <ul>
+          <li class="active"><a href="trangChu.html">Trang chủ</a></li>
+          <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+          <li><a href="newInfo.html">Sửa thông tin sinh viên</a></li>
+          <li><a href="lopTinChi.html">Các lớp đăng ký</a></li>
+          <li><a href="diem.html">Các môn đăng ký</a></li>
+          <li><a href="../index.html#logout">Đăng Xuất</a></li>
+        </ul>
+      </aside>
+
+      <main class="content-area">
+        <section class="info-box bordered">
+          <h2 class="content-title">Thông tin sinh viên</h2>
+          <dl>
+            <dt>Họ và Tên:</dt><dd id="full_name">Đang tải...</dd>
+            <dt>MSV:</dt><dd id="student_id">Đang tải...</dd>
+            <dt>Ngày Sinh:</dt><dd id="date_of_birth">Đang tải...</dd>
+            <dt>Email:</dt><dd id="email">Đang tải...</dd>
+            <dt>Chức danh:</dt><dd id="role">Sinh viên</dd> </dl>
+        </section>
+
+        <section class="info-box shaded">
+          <h2 class="content-title">Thông tin khóa học</h2>
+          <dl>
+            <dt>Khoa:</dt><dd id="department">Đang tải...</dd>
+            <dt>Niên khóa:</dt><dd id="entry_year">Đang tải...</dd>
+            <dt>Trạng thái học:</dt><dd id="status">Đang tải...</dd>
+          </dl>
+        </section>
+      </main>
+    </div>
+
+    <footer class="page-footer">
+      Phiên bản 1
+    </footer>
+  </div>
+
   <script src="../../static/form.js"></script>
+  <script>
+    // Đoạn script này chỉ điều chỉnh lại hàm getProfile để điền thêm mục Chức danh
+    function getProfileModified() {
+      if (!window.location.pathname.includes("trangChu.html")) return;
+
+      fetch(`${API_BASE}/api/student/profile`, {method: 'get', credentials: 'include'})
+      .then(function(response){
+          if (!response.ok) {
+              // Nếu lỗi 401 (chưa đăng nhập), chuyển về trang login
+              if (response.status === 401) {
+                  window.location.href = "../index.html"; // Chỉnh lại đường dẫn nếu cần
+                  return Promise.reject('Chưa đăng nhập'); // Ngăn không chạy tiếp
+              }
+              return response.json().then(function(err){
+                  throw new Error(err.message || 'Lỗi tải dữ liệu');
+              });
+          }
+          return response.json();
+      })
+      .then(function(data){
+          // Cập nhật header chào
+          document.getElementById('userName').textContent = data["Họ và tên"] || 'Bạn';
+
+          // Điền thông tin sinh viên
+          document.getElementById('full_name').textContent = data["Họ và tên"] || '';
+          document.getElementById('student_id').textContent = data["Mã sinh viên"] || '';
+          document.getElementById('date_of_birth').textContent = data["Ngày sinh"] || '';
+          document.getElementById('email').textContent = data["Email"] || '';
+          // API có trả về Chức Danh, nên ta hiển thị nó
+          document.getElementById('role').textContent = data["Chức Danh"] || 'Sinh viên';
+
+          // Điền thông tin khóa học
+          var course = data["Thông tin khóa học"] || {};
+          document.getElementById('department').textContent = course["Tên khoa"] || '';
+          document.getElementById('entry_year').textContent = course["Năm bắt đầu"] || '';
+          document.getElementById('status').textContent = course["Trạng thái"] || '';
+      })
+      .catch(function(error){
+          // Không alert nữa nếu là lỗi chưa đăng nhập
+          if (error !== 'Chưa đăng nhập') {
+            console.error('Lỗi khi tải thông tin sinh viên:', error);
+            // Có thể hiển thị lỗi tinh tế hơn thay vì alert
+            // document.getElementById('userName').textContent = "Lỗi";
+          }
+      });
+    }
+
+    // Ghi đè hàm getProfile gốc trong form.js bằng hàm mới
+    // Đảm bảo script này chạy SAU khi form.js được tải
+    document.addEventListener('DOMContentLoaded', function() {
+       // Xóa bỏ hàm getProfile gốc khỏi sự kiện DOMContentLoaded nếu nó được gọi trong đó
+       // Thay thế bằng cách gọi trực tiếp hàm mới của chúng ta
+       getProfileModified();
+    });
+
+  </script>
 </body>
 </html>
