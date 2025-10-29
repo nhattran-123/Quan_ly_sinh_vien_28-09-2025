@@ -287,7 +287,7 @@
     
     .page-footer {
         padding: 10px 30px;
-        text-align: right;
+        text-align: center;
         font-size: 0.8em;
         color: #6c757d;
         border-top: 1px solid #dee2e6;
@@ -594,3 +594,4 @@
         min-width: 100px;
         display: inline-block;
     }
+    
