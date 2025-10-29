@@ -34,7 +34,7 @@
           <form id="setInformationForm">
             <div class="form-group">
               <label for="full_name">Họ và tên:</label>
-              <input type="text" id="full_name" value="Đang tải..."  />
+              <input type="text" id="full_name" value="Đang tải..." />
             </div>
             <div class="form-group">
               <label for="email">Email:</label>
@@ -43,8 +43,7 @@
             <div class="form-group">
               <label for="date_of_birth">Ngày sinh:</label>
               <input type="date" id="date_of_birth" value="" required />
-               </div>
-
+            </div>
             <button type="submit" class="update-button">Thay Đổi</button>
           </form>
         </div>
@@ -58,139 +57,142 @@
 
   <script src="../../static/form.js"></script>
   <script>
-    // Hàm này sẽ ghi đè hàm setProfile trong form.js
-    function setProfileModified() {
-      // (Nội dung hàm setProfileModified giữ nguyên như trước)
-      // ... (toàn bộ code của hàm setProfileModified bạn đang có) ...
-       if (!window.location.pathname.includes("newInfo.html")) return;
-
-       const apiUrl = `${API_BASE}/api/student/profile`;
-       const form = document.getElementById('setInformationForm');
-       if (!form) {
-           console.error("Form 'setInformationForm' not found!");
-           return;
-       }
-
-       const nameInput = document.getElementById("full_name");
-       const emailInput = document.getElementById('email');
-       const dobInput = document.getElementById('date_of_birth');
-       const userNameHeader = document.getElementById('userName');
-
-       // --- Hàm chuyển đổi định dạng ngày ---
-       function formatDate_DDMMYYYY_to_YYYYMMDD(dateString) {
-           if (!dateString || !/^\d{2}-\d{2}-\d{4}$/.test(dateString)) return "";
-           const parts = dateString.split('-');
-           return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
-       }
-
-       function formatDate_YYYYMMDD_to_DDMMYYYY(dateString) {
-           if (!dateString) return "";
-           const parts = dateString.split('-');
-           return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-YYYY
-       }
-
-       // --- Gọi API GET để điền thông tin hiện tại ---
-       fetch(apiUrl, { method: "GET", credentials: "include" })
-         .then(response => {
-             if (!response.ok) {
-                 if (response.status === 401) {
-                     window.location.href = "../index.html";
-                     return Promise.reject('Chưa đăng nhập');
-                 }
-                 return response.json().then(err => { throw new Error(err.message || 'Lỗi tải dữ liệu'); });
-             }
-             return response.json();
-         })
-         .then(data => {
-             // KIỂM TRA LẠI TRƯỚC KHI GÁN VALUE
-             if (!userNameHeader || !nameInput || !emailInput || !dobInput) {
-                 console.error("One or more critical elements became null AFTER fetch!");
-                 alert("Lỗi giao diện nghiêm trọng. Vui lòng tải lại trang.");
-                 return;
-             }
-             const fullName = data["Họ và tên"] || "";
-             userNameHeader.textContent = fullName || 'Bạn';
-             nameInput.value = fullName;
-             emailInput.value = data["Email"] || "";
-             dobInput.value = formatDate_DDMMYYYY_to_YYYYMMDD(data["Ngày sinh"]);
-         })
-         .catch(err => {
-             if (err !== 'Chưa đăng nhập') {
-                 console.error("Lỗi khi tải thông tin:", err);
-                 alert("Không thể tải thông tin sinh viên: " + err.message);
-             }
-         });
-
-       // --- Xử lý sự kiện SUBMIT form (gọi PUT API) ---
-       form.addEventListener('submit', function (event) {
-         event.preventDefault();
-         const newFullName = nameInput.value.trim(); // Lấy tên từ input
-         const newEmail = emailInput.value.trim();
-         const newDobYYYYMMDD = dobInput.value;
-         const newDobDDMMYYYY = formatDate_YYYYMMDD_to_DDMMYYYY(newDobYYYYMMDD);
-
-         if (!newFullName || !newEmail || !newDobDDMMYYYY) { // Kiểm tra cả tên
-             alert("Vui lòng nhập đầy đủ Họ tên, Email và Ngày sinh.");
-             return;
-         }
-
-         const updatedInfo = {
-           full_name: newFullName, // Thêm tên vào data gửi đi
-           email: newEmail,
-           date_of_birth: newDobDDMMYYYY
-         };
-
-         // Gọi API PUT
-         fetch(apiUrl, {
-           method: 'PUT',
-           headers: { "Content-Type": "application/json" },
-           credentials: "include",
-           body: JSON.stringify(updatedInfo)
-         })
-         .then(response => response.json())
-         .then(data => {
-           if (data.error) {
-             alert("Cập nhật thất bại: " + (data.message || data.error));
-           } else {
-             alert(data.message || "Cập nhật thông tin thành công!");
-             // Cập nhật lại tên trên header nếu có thay đổi
-             if(userNameHeader.textContent !== newFullName) {
-                 userNameHeader.textContent = newFullName || 'Bạn';
-             }
-           }
-         })
-         .catch(err => {
-           console.error("Lỗi khi cập nhật:", err);
-           alert("Không thể gửi yêu cầu cập nhật. Lỗi: " + err.message);
-         });
-       });
-    }
-
-    // *** SỬA ĐOẠN DƯỚI ĐÂY ***
+    // Chờ DOM load xong mới chạy code
     document.addEventListener('DOMContentLoaded', function() {
-        // Ghi đè hàm setProfile trước
-        setProfile = setProfileModified;
+      console.log("DOMContentLoaded: Starting script for newInfo.html");
 
-        // Hàm kiểm tra và gọi setProfileModified
-        function tryRunSetProfile() {
-            // Kiểm tra các phần tử quan trọng đã có chưa
-            const nameInput = document.getElementById("full_name");
-            const emailInput = document.getElementById('email');
-            const dobInput = document.getElementById('date_of_birth');
-            const userNameHeader = document.getElementById('userName');
+      // --- Chỉ chạy code nếu đúng trang ---
+      if (!window.location.pathname.includes("newInfo.html")) {
+        console.log("Not on newInfo.html, skipping script.");
+        return;
+      }
 
-            if (nameInput && emailInput && dobInput && userNameHeader) {
-                console.log("Elements ready, running setProfileModified.");
-                setProfile(); // Gọi hàm đã được ghi đè
-            } else {
-                console.warn("Elements not ready yet, retrying in 10ms...");
-                setTimeout(tryRunSetProfile, 10); // Nếu chưa có, đợi 10ms rồi thử lại
+      // --- Lấy các elements cần thiết ---
+      const apiUrl = `${API_BASE}/api/student/profile`;
+      const form = document.getElementById('setInformationForm');
+      const nameInput = document.getElementById("full_name");
+      const emailInput = document.getElementById('email');
+      const dobInput = document.getElementById('date_of_birth');
+      const userNameHeader = document.getElementById('userName');
+
+      // --- Kiểm tra elements ngay lập tức ---
+      if (!form || !nameInput || !emailInput || !dobInput || !userNameHeader) {
+          console.error("CRITICAL ERROR: One or more required elements not found on DOMContentLoaded!");
+          // Hiển thị lỗi rõ ràng hơn cho người dùng
+          document.body.innerHTML = '<h1 style="color:red; text-align:center; margin-top: 50px;">Lỗi tải giao diện. Vui lòng thử làm mới trang hoặc liên hệ hỗ trợ.</h1>';
+          return; // Dừng hoàn toàn script
+      }
+      console.log("All required elements found initially.");
+
+      // --- Hàm chuyển đổi định dạng ngày ---
+      function formatDate_DDMMYYYY_to_YYYYMMDD(dateString) {
+          if (!dateString || !/^\d{2}-\d{2}-\d{4}$/.test(dateString)) return "";
+          const parts = dateString.split('-');
+          return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+      }
+      function formatDate_YYYYMMDD_to_DDMMYYYY(dateString) {
+          if (!dateString) return "";
+          const parts = dateString.split('-');
+          return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-YYYY
+      }
+
+      // --- Gọi API GET để điền thông tin ---
+      console.log("Fetching profile data...");
+      fetch(apiUrl, { method: "GET", credentials: "include" })
+        .then(response => {
+            console.log("Fetch response status:", response.status);
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.warn("Unauthorized (401). Redirecting to login.");
+                    window.location.href = "../index.html"; // Chuyển về login
+                    return Promise.reject('Chưa đăng nhập');
+                }
+                // Cố gắng parse lỗi JSON nếu có
+                return response.json().then(errData => {
+                    throw new Error(errData.message || `Lỗi HTTP ${response.status}`);
+                }).catch(() => {
+                    // Nếu không parse được JSON lỗi
+                    throw new Error(`Lỗi HTTP ${response.status} khi tải dữ liệu.`);
+                });
             }
-        }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Profile data received:", data);
+            // Điền dữ liệu vào form và header
+            const fullName = data["Họ và tên"] || "";
+            if (userNameHeader) { // Kiểm tra lại lần nữa cho chắc
+                 userNameHeader.textContent = fullName || 'Bạn';
+            } else {
+                 console.warn("userNameHeader somehow became null after fetch.");
+            }
+            if(nameInput) nameInput.value = fullName;
+            if(emailInput) emailInput.value = data["Email"] || "";
+            if(dobInput) dobInput.value = formatDate_DDMMYYYY_to_YYYYMMDD(data["Ngày sinh"]);
+            console.log("Form populated.");
+        })
+        .catch(err => {
+            if (err !== 'Chưa đăng nhập') {
+                console.error("Error fetching or populating data:", err);
+                alert("Không thể tải thông tin sinh viên: " + err.message);
+                // Có thể disable form ở đây nếu muốn
+                // form.style.opacity = '0.5';
+                // form.querySelectorAll('input, button').forEach(el => el.disabled = true);
+            }
+        });
 
-        // Bắt đầu kiểm tra và chạy
-        tryRunSetProfile();
-    });
+      // --- Xử lý sự kiện SUBMIT form ---
+      form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          console.log("Form submitted.");
+
+          // Lấy giá trị mới từ form
+          const newFullName = nameInput.value.trim();
+          const newEmail = emailInput.value.trim();
+          const newDobYYYYMMDD = dobInput.value;
+          const newDobDDMMYYYY = formatDate_YYYYMMDD_to_DDMMYYYY(newDobYYYYMMDD);
+
+          // Kiểm tra trống
+          if (!newFullName || !newEmail || !newDobDDMMYYYY) {
+              alert("Vui lòng nhập đầy đủ Họ tên, Email và Ngày sinh.");
+              return;
+          }
+
+          const updatedInfo = {
+            full_name: newFullName,
+            email: newEmail,
+            date_of_birth: newDobDDMMYYYY
+          };
+          console.log("Submitting updated info:", updatedInfo);
+
+          // Gọi API PUT
+          fetch(apiUrl, {
+            method: 'PUT',
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(updatedInfo)
+          })
+          .then(response => response.json()) // Luôn cố gắng parse JSON
+          .then(data => {
+            console.log("Update response data:", data);
+            if (data.error) {
+              alert("Cập nhật thất bại: " + (data.message || data.error));
+            } else {
+              alert(data.message || "Cập nhật thông tin thành công!");
+              // Cập nhật lại header nếu tên thay đổi
+              const currentUserNameHeader = document.getElementById('userName'); // Lấy lại tham chiếu
+              if (currentUserNameHeader && currentUserNameHeader.textContent !== newFullName) {
+                  currentUserNameHeader.textContent = newFullName || 'Bạn';
+              }
+            }
+          })
+          .catch(err => {
+            console.error("Error submitting update:", err);
+            alert("Không thể gửi yêu cầu cập nhật. Lỗi: " + err.message);
+          });
+      });
+
+    }); // --- Kết thúc DOMContentLoaded ---
   </script>
 </body>
 </html>

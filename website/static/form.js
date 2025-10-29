@@ -244,7 +244,7 @@ function getProfile(){
 }
 //7. Sửa thông tin sinh viên gồm get và put - newInfo.html
 function setProfile(){
-    if (!window.location.pathname.includes("newInfo.html")) return;
+    if (window.location.pathname.includes("newInfo.html")) return;
 
     const apiUrl = `${API_BASE}/api/student/profile`;
     const set = document.getElementById('setInformationForm');
