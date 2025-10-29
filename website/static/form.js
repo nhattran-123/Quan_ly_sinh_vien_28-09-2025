@@ -702,7 +702,7 @@ document.addEventListener('DOMContentLoaded',function(){
     const btn = document.getElementById("excel_out");
     if (btn) btn.addEventListener("click", excelList);
 
-    loadGrades();
+    //loadGrades();
     attendanceList();
 
 });

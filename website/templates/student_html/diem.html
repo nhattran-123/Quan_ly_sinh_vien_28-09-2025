@@ -1,39 +1,290 @@
-<!DOCTYPE html> 
-<html lang="vi"> 
-<head> 
-  <meta charset="UTF-8" /> 
-  <title>Kết quả học tập</title>  
-  <link rel="stylesheet" href="../../static/style.css">
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Các môn đăng ký</title>
+    <link rel="stylesheet" href="../../static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body>  
-  <main>
-    <article>
-      <header>
-        <h2>Kết quả học tập</h2>
-        <label for="termSelect">Kỳ học:</label>
-        <select id="termSelect"></select>
-      </header>
-      <table class="danhSach">
-        <thead><tr><th>Môn học</th><th>Giữa kỳ</th><th>Cuối kỳ</th><th>Tổng kết</th><th>Điểm chữ</th></tr></thead>
-        <tbody id="gradeTableBody">
-          <!-- JS sẽ thêm các dòng dữ liệu -->
-        </tbody>
-      </table>
-    </article>
-    <aside>
-      <header>
-        <h2>Tính năng</h2>
-      </header>
-      <ul class="chuyen">
-        <li><a href="../index.html#reset" id="">Đổi mật khẩu</a></li>
-        <li><a href="trangChu.html">Trang chủ</a></li>
-        <li><a href="newInfo.html">Cập nhập thông tin</a></li>
-        <li class="m1"><a href="diem.html">Kết quả học tập</a></li>
-        <li><a href="lopTinChi.html">Lớp tín chỉ</a></li>
-        <li><a href="../index.html#logout" id="">Đăng xuất</a></li>
-      </ul>
-    </aside>
-  </main>
-  <script src="../../static/form.js"></script>
+<body>
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-left">
+                <h1>Xin chào, <span id="userName">Đang tải...</span></h1>
+            </div>
+            <div class="header-right">
+                Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+            </div>
+        </header>
+
+        <div class="page-body">
+            <aside class="sidebar-nav">
+                <ul>
+                    <li><a href="trangChu.html">Trang chủ</a></li>
+                    <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+                    <li><a href="newInfo.html">Cập nhật thông tin</a></li>
+                    <li><a href="lopTinChi.html">Các lớp đăng ký</a></li>
+                    <li class="active"><a href="diem.html">Các môn đăng ký</a></li>
+                    <li><a href="../index.html#logout">Đăng Xuất</a></li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                <h2 class="content-title">Các Môn Đăng Ký Trong Kỳ</h2>
+
+                <div class="term-selector">
+                    <label for="termSelect">Chọn kỳ học:</label>
+                    <select id="termSelect">
+                        <option value="">Đang tải kỳ học...</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table class="danhSach courses-table">
+                        <thead>
+                            <tr>
+                                <th>Mã Môn</th>
+                                <th>Tên Môn</th>
+                                <th>Số Tín</th>
+                                <th>Lý Thuyết (tiết)</th>
+                                <th>Thực Hành (tiết)</th>
+                                <th>Bảng Điểm</th>
+                            </tr>
+                        </thead>
+                        <tbody id="courseListBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center;">Vui lòng chọn kỳ học...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+
+        <footer class="page-footer">
+            Phiên bản 1
+        </footer>
+    </div>
+
+    <div id="gradeModal" class="modal-overlay" style="display: none;"> <div class="modal-box">
+            <button id="closeModalBtn" class="modal-close-btn">&times;</button>
+            <h2 class="modal-title">Kết Quả Học Tập</h2>
+            <div id="gradeModalContent" class="modal-content">
+                <p>Đang tải chi tiết điểm...</p>
+            </div>
+        </div>
+    </div>
+    <script src="../../static/form.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Chỉ chạy code nếu đúng trang
+            if (!window.location.pathname.includes("diem.html")) return;
+
+            console.log("DOMContentLoaded: Starting script for diem.html");
+
+            // Lấy elements
+            const termSelect = document.getElementById('termSelect');
+            const courseListBody = document.getElementById('courseListBody');
+            const userNameHeader = document.getElementById('userName');
+            const gradeModal = document.getElementById('gradeModal');
+            const gradeModalContent = document.getElementById('gradeModalContent');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            // --- Hàm tải tên người dùng cho header ---
+            function loadUserName() {
+                fetch(`${API_BASE}/api/auth/current_user`, { method: 'GET', credentials: 'include' })
+                    .then(response => {
+                         if (response.status === 401) { window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập');}
+                         if (!response.ok) throw new Error('Cannot fetch user info');
+                         return response.json();
+                     })
+                    .then(data => { if (userNameHeader) userNameHeader.textContent = data["Họ và Tên"] || 'Bạn'; })
+                    .catch(err => {
+                         if (err !== 'Chưa đăng nhập') { console.error("Error loading username:", err); if(userNameHeader) userNameHeader.textContent = "Khách";}
+                     });
+            }
+
+            // --- Hàm tải danh sách kỳ học ---
+            function loadTerms() {
+                console.log("Fetching terms...");
+                fetch(`${API_BASE}/api/student/terms`, { method: 'GET', credentials: 'include' })
+                    .then(res => {
+                        if (res.status === 401) { window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập'); }
+                        if (!res.ok) throw new Error('Không thể tải danh sách kỳ học');
+                        return res.json();
+                     })
+                    .then(data => {
+                        console.log("Terms received:", data);
+                        termSelect.innerHTML = ''; // Clear default
+                        if (!Array.isArray(data) || data.length === 0){
+                             termSelect.innerHTML = '<option value="">Không có kỳ học nào</option>';
+                             courseListBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Không có dữ liệu kỳ học.</td></tr>';
+                             return;
+                        }
+
+                        data.forEach(term => {
+                            const opt = document.createElement('option');
+                            opt.value = term["Mã kỳ học"];
+                            opt.textContent = `${term["Tên kỳ học"]} (${term["Ngày bắt đầu"]} - ${term["Ngày kết thúc"]})`;
+                            termSelect.appendChild(opt);
+                        });
+
+                        if (data[0]) {
+                            console.log("Loading courses for the first term:", data[0]["Mã kỳ học"]);
+                            loadCourses(data[0]["Mã kỳ học"]); // Load courses for the first term automatically
+                        }
+                    })
+                    .catch(err => {
+                         if (err !== 'Chưa đăng nhập') {
+                             console.error("Lỗi khi tải kỳ học:", err);
+                             termSelect.innerHTML = '<option value="">Lỗi tải kỳ học</option>';
+                             courseListBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Lỗi: ${err.message}</td></tr>`;
+                         }
+                    });
+            }
+
+            // --- Hàm tải danh sách môn học theo kỳ học ---
+            function loadCourses(termId) {
+                if (!termId) {
+                     courseListBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Vui lòng chọn kỳ học hợp lệ.</td></tr>';
+                     return;
+                }
+                console.log(`Fetching courses for term: ${termId}`);
+                courseListBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Đang tải danh sách môn...</td></tr>';
+
+                fetch(`${API_BASE}/api/student/courses/${termId}`, { method: 'GET', credentials: 'include' })
+                    .then(res => {
+                        if (res.status === 401) { window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập'); }
+                         if (res.status === 404) return res.json().then(errData => { throw new Error(errData.message || "Không có môn học nào trong kỳ này."); });
+                        if (!res.ok) throw new Error(`Lỗi ${res.status} khi tải môn học`);
+                        return res.json();
+                    })
+                    .then(data => {
+                        console.log("Courses received:", data);
+                        courseListBody.innerHTML = ''; // Clear loading message
+
+                        if (!Array.isArray(data) || data.length === 0) {
+                            courseListBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Không có môn học nào trong kỳ này.</td></tr>';
+                            return;
+                        }
+
+                        data.forEach(course => {
+                            const row = document.createElement('tr');
+                            const viewGradeBtn = document.createElement('button');
+                            viewGradeBtn.classList.add('view-grade-btn');
+                            viewGradeBtn.dataset.courseId = course["Mã Môn Học"];
+                            viewGradeBtn.innerHTML = '<i class="fas fa-eye"></i>';
+
+                            row.innerHTML = `
+                                <td>${course["Mã Môn Học"] || '-'}</td>
+                                <td>${course["Tên Môn học"] || '-'}</td>
+                                <td>${course["Số tín"] !== undefined ? course["Số tín"] : '-'}</td>
+                                <td>${course["Số tiết lý thuyết"] !== undefined ? course["Số tiết lý thuyết"] : '-'}</td>
+                                <td>${course["Số tiết thực hành"] !== undefined ? course["Số tiết thực hành"] : '-'}</td>
+                                <td></td> `;
+                            row.cells[5].appendChild(viewGradeBtn);
+                            courseListBody.appendChild(row);
+                        });
+                    })
+                    .catch(err => {
+                        if (err !== 'Chưa đăng nhập') {
+                             console.error("Lỗi khi tải danh sách môn:", err);
+                             courseListBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">${err.message}</td></tr>`;
+                        }
+                    });
+            }
+
+            // --- Hàm tải và hiển thị chi tiết điểm trong Modal ---
+            function showGradeDetails(courseId) {
+                if (!courseId) return;
+                console.log(`Fetching grade details for course: ${courseId}`);
+
+                gradeModalContent.innerHTML = '<p>Đang tải chi tiết điểm...</p>';
+                gradeModal.style.display = 'flex'; // Show modal overlay
+
+                fetch(`${API_BASE}/api/student/grade/${courseId}`, { method: 'GET', credentials: 'include' })
+                    .then(res => {
+                        if (res.status === 401) { window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập'); }
+                        if (res.status === 404) return res.json().then(errData => { throw new Error(errData.message || "Không tìm thấy điểm cho môn này."); });
+                        if (!res.ok) throw new Error(`Lỗi ${res.status} khi tải chi tiết điểm`);
+                        return res.json();
+                    })
+                    .then(data => {
+                        console.log("Grade details received:", data);
+
+                        let contentHTML = `
+                            <h4>${data["Tên môn học"] || 'N/A'}</h4>
+                            <p>MSV: ${data["MSV"] || 'N/A'} - Họ tên: ${data["Họ và tên"] || 'N/A'}</p>
+                            <p>Kỳ học: ${data["Kỳ học"] || 'N/A'} - Mã lớp: ${data["Mã lớp"] || 'N/A'}</p>
+                            <hr>
+                            <h5>Điểm thành phần:</h5>
+                        `;
+
+                        if (Array.isArray(data["Điểm thành phần"]) && data["Điểm thành phần"].length > 0) {
+                            contentHTML += '<ul>';
+                            data["Điểm thành phần"].forEach(item => {
+                                // API trả về 'grade' có thể là null
+                                const score = item["Điểm"] !== null ? item["Điểm"] : 'Chưa có';
+                                contentHTML += `<li><strong>${item["Tên điểm"] || 'N/A'}:</strong> ${score}</li>`;
+                            });
+                            contentHTML += '</ul>';
+                        } else {
+                            contentHTML += '<p>Chưa có điểm thành phần.</p>';
+                        }
+
+                        contentHTML += '<hr><h5>Tổng kết:</h5>';
+                        if (data["Tổng kết"]) {
+                            const finalScore = data["Tổng kết"]["Điểm số"] !== null ? data["Tổng kết"]["Điểm số"] : 'N/A';
+                            const letterGrade = data["Tổng kết"]["Điểm chữ"] || 'N/A';
+                            contentHTML += `<p><strong>Điểm số:</strong> ${finalScore}</p>`;
+                            contentHTML += `<p><strong>Điểm chữ:</strong> ${letterGrade}</p>`;
+                        } else {
+                            contentHTML += '<p>Chưa có điểm tổng kết.</p>';
+                        }
+
+                        gradeModalContent.innerHTML = contentHTML;
+                    })
+                    .catch(err => {
+                         if (err !== 'Chưa đăng nhập') {
+                            console.error("Lỗi khi tải chi tiết điểm:", err);
+                            gradeModalContent.innerHTML = `<p style="color: red;">Lỗi: ${err.message}</p>`;
+                         }
+                    });
+            }
+
+            // --- Hàm đóng Modal ---
+            function closeModal() {
+                gradeModal.style.display = 'none';
+                gradeModalContent.innerHTML = ''; // Clear content
+            }
+
+            // --- Gắn sự kiện ---
+            termSelect.addEventListener('change', function () {
+                loadCourses(this.value);
+            });
+
+            // Event delegation for view grade buttons
+            courseListBody.addEventListener('click', function(event) {
+                const button = event.target.closest('.view-grade-btn');
+                if (button) {
+                    const courseId = button.dataset.courseId;
+                    showGradeDetails(courseId);
+                }
+            });
+
+            // Close modal events
+            closeModalBtn.addEventListener('click', closeModal);
+            gradeModal.addEventListener('click', function(event) {
+                if (event.target === gradeModal) { // Click on overlay
+                    closeModal();
+                }
+            });
+
+            // --- Tải dữ liệu ban đầu ---
+            loadUserName();
+            loadTerms();
+
+        }); // --- Kết thúc DOMContentLoaded ---
+    </script>
 </body>
 </html>
