@@ -499,3 +499,79 @@ table.danhSach th {
     transform: translateY(0); /* Hạ nút xuống khi nhấn */
     box-shadow: 0 2px 5px rgba(192, 0, 0, 0.3);
 }
+/* --- CSS RIÊNG CHO TRANG LỚP TÍN CHỈ --- */
+
+/* Dropdown chọn kỳ học */
+.term-selector {
+    margin-bottom: 20px; /* Khoảng cách dưới dropdown */
+    display: flex; /* Sắp xếp label và select trên 1 hàng */
+    align-items: center; /* Căn giữa dọc */
+    gap: 10px; /* Khoảng cách giữa label và select */
+}
+
+.term-selector label {
+    display: inline-block; /* Hiện label */
+    font-weight: bold;
+    color: #555;
+}
+
+.term-selector select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 300px; /* Độ rộng tối thiểu cho select */
+    font-size: 1em;
+}
+
+/* Container cho bảng */
+.table-container {
+    margin-top: 15px;
+    background-color: #fff; /* Nền trắng cho bảng */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    overflow: hidden; /* Để bo góc hoạt động đúng */
+}
+
+/* Bảng danh sách lớp */
+table.classes-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table.classes-table th,
+table.classes-table td {
+    border: 1px solid #eee; /* Viền mờ hơn */
+    padding: 12px 15px; /* Tăng padding */
+    text-align: left;
+    vertical-align: middle; /* Căn giữa nội dung theo chiều dọc */
+}
+
+table.classes-table th {
+    background-color: #c00; /* Nền đỏ cho header bảng */
+    color: white;
+    font-weight: bold;
+    font-size: 0.95em;
+    text-transform: uppercase; /* Viết hoa chữ header */
+}
+
+/* Căn giữa cột cuối (chứa icon mắt) */
+table.classes-table td:last-child,
+table.classes-table th:last-child {
+    text-align: center;
+    width: 100px; /* Giới hạn độ rộng cột icon */
+}
+
+/* Nút icon mắt */
+.view-students-btn {
+    display: inline-block;
+    color: #c00; /* Màu đỏ cho icon */
+    font-size: 1.3em; /* Kích thước icon */
+    text-decoration: none;
+    padding: 5px;
+    transition: transform 0.2s, color 0.2s;
+}
+
+.view-students-btn:hover {
+    color: #a00; /* Đỏ đậm hơn khi hover */
+    transform: scale(1.1); /* Phóng to nhẹ */
+}
