@@ -1,0 +1,19 @@
+<h2>Thông tin giảng viên</h2>
+<div id="lecturerInfo"></div>
+
+<script>
+fetch('http://127.0.0.1:5000/api/lecturer/userinfor', {
+  credentials: 'include'
+})
+.then(res => res.json())
+.then(data => {
+  document.getElementById('lecturerInfo').innerHTML = `
+    <p><b>Mã giảng viên:</b> ${data.id}</p>
+    <p><b>Họ và tên:</b> ${data["Họ và Tên"]}</p>
+    <p><b>Email:</b> ${data.email}</p>
+    <p><b>Ngày sinh:</b> ${data["Ngày sinh"] || "Chưa có"}</p>
+    <p><b>Khoa:</b> ${data.details["Tên Khoa"]}</p>
+    <p><b>Chức vụ:</b> ${data.details["Chức vụ"]}</p>
+  `;
+});
+</script>

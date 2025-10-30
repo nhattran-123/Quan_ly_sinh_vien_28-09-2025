@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Sửa thông tin giảng viên</h2>
+
+<form id="editForm" onsubmit="updateLecturer(event)">
+  <label>Email:</label><input type="text" id="email"><br>
+  <label>Họ tên:</label><input type="text" id="name"><br>
+  <label>Ngày sinh:</label><input type="date" id="dob"><br>
+  <button type="submit">Lưu thay đổi</button>
+</form>
+
+<script>
+function updateLecturer(e) {
+  e.preventDefault();
+  const body = {
+    email: document.getElementById("email").value,
+    name: document.getElementById("name").value,
+    birthdate: document.getElementById("dob").value
+  };
+
+  fetch('http://127.0.0.1:5000/api/lecturer/update_lecturer', {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+    credentials: 'include'
+  })
+  .then(res => res.json())
+  .then(data => alert("Cập nhật thành công!"));
+}
+</script>
+{% endblock %}

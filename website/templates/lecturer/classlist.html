@@ -1,0 +1,50 @@
+<h2>Danh sách lớp giảng dạy</h2>
+<table border="1" id="tblClass">
+  <thead>
+    <tr>
+      <th>STT</th><th>Mã lớp</th><th>Tên khóa học</th><th>Số tín</th>
+      <th>Lý thuyết</th><th>Thực hành</th><th>Phòng</th>
+      <th>Ngày bắt đầu</th><th>Ngày kết thúc</th><th>Chức năng</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+fetch('http://127.0.0.1:5000/api/lecturer/classSections', {
+  credentials: 'include'
+})
+.then(res => res.json())
+.then(classes => {
+  const tb = document.querySelector('#tblClass tbody');
+  if (typeof classes === "string") {
+    tb.innerHTML = `<tr><td colspan="10">${classes}</td></tr>`;
+    return;
+  }
+  classes.forEach(c => {
+    tb.innerHTML += `
+      <tr>
+        <td>${c["STT"]}</td>
+        <td>${c.id}</td>
+        <td>${c["Tên khóa học"]}</td>
+        <td>${c["Số tín"]}</td>
+        <td>${c["Lý thuyết"]}</td>
+        <td>${c["Thực hành"]}</td>
+        <td>${c["Phòng"]}</td>
+        <td>${c["Ngày bắt đầu"]}</td>
+        <td>${c["Ngày kết thúc"]}</td>
+        <td>
+          <button onclick="openStudents('${c.id}')">SV</button>
+          <button onclick="openGrades('${c.id}')">Điểm</button>
+        </td>
+      </tr>`;
+  });
+});
+
+function openStudents(id) {
+  window.location.href = `/lecturer/studentList.html?class_id=${id}`;
+}
+function openGrades(id) {
+  window.location.href = `/lecturer/gradeList.html?class_id=${id}`;
+}
+</script>

@@ -1,0 +1,37 @@
+<h2>Danh sách sinh viên</h2>
+<table border="1" id="tblStudents">
+  <thead>
+    <tr><th>STT</th><th>ID</th><th>Họ và tên</th><th>Email</th><th>Ngày sinh</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<button id="btnExcel">Tải Excel</button>
+
+<script>
+const class_id = new URLSearchParams(window.location.search).get("class_id");
+
+fetch(`http://127.0.0.1:5000/api/lecturer/list_student/${class_id}`, {
+  credentials: 'include'
+})
+.then(res => res.json())
+.then(data => {
+  const tb = document.querySelector("#tblStudents tbody");
+  if (data.message) {
+    tb.innerHTML = `<tr><td colspan="5">${data.message}</td></tr>`;
+    return;
+  }
+  data.forEach(sv => {
+    tb.innerHTML += `<tr>
+      <td>${sv["STT"]}</td>
+      <td>${sv.id}</td>
+      <td>${sv["Họ và tên"]}</td>
+      <td>${sv.email}</td>
+      <td>${sv["Ngày sinh"] || ""}</td>
+    </tr>`;
+  });
+});
+
+document.getElementById("btnExcel").onclick = () => {
+  window.open(`http://127.0.0.1:5000/api/lecturer/list_student/export-excel/${class_id}`);
+};
+</script>

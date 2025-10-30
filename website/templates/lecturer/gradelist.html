@@ -1,0 +1,63 @@
+<h2>Danh sách điểm</h2>
+<table border="1" id="tblGrades"><thead></thead><tbody></tbody></table>
+<canvas id="chart" width="400" height="200"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const class_id = new URLSearchParams(window.location.search).get("class_id");
+
+// Lấy danh sách điểm
+fetch(`http://127.0.0.1:5000/api/lecturer/grades/${class_id}`, {credentials:'include'})
+.then(res => res.json())
+.then(grades => {
+  if (!Array.isArray(grades)) {
+    document.body.innerHTML = `<p>${grades.message || "Lỗi tải dữ liệu"}</p>`;
+    return;
+  }
+
+  const headerKeys = Object.keys(grades[0]);
+  const thead = document.querySelector('#tblGrades thead');
+  const tbody = document.querySelector('#tblGrades tbody');
+  thead.innerHTML = `<tr>${headerKeys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+  grades.forEach(row => {
+    tbody.innerHTML += `<tr>${headerKeys.map(k => `<td>${row[k] ?? ""}</td>`).join('')}</tr>`;
+  });
+});
+
+// Lấy dữ liệu biểu đồ phân phối
+fetch(`http://127.0.0.1:5000/api/lecturer/grades/distribution/${class_id}`, {credentials:'include'})
+.then(res => res.json())
+.then(data => {
+  const ctx = document.getElementById('chart');
+  const labels = data.distribution.map(d => d.name);
+  const values = data.distribution.map(d => d.value);
+  const colors = data.distribution.map(d => d.color);
+
+  new Chart(ctx, {
+    type: 'pie',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+});
+</script>
+<form id="uploadForm">
+  <input type="file" id="fileInput" accept=".xlsx,.xls">
+  <button type="submit">Upload điểm lớp</button>
+</form>
+
+<script>
+document.getElementById("uploadForm").onsubmit = e => {
+  e.preventDefault();
+  const file = document.getElementById("fileInput").files[0];
+  const formData = new FormData();
+  formData.append("file", file);
+
+  fetch(`http://127.0.0.1:5000/api/lecturer/grades/upload-excel/${class_id}`, {
+    method: "POST",
+    body: formData,
+    credentials: "include"
+  })
+  .then(res => res.json())
+  .then(msg => alert(msg.message || msg.error));
+};
+</script>
