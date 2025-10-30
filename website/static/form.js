@@ -68,7 +68,7 @@ function login() {
                     window.location.href = "../templates/lecturer/trangChu.html";
                     break;
                 case "admin":
-                    window.location.href = "../templates/admin/dashboard.html";
+                    window.location.href = "../templates/admin/trangChu.html";
                     break;
                 default:
                     alert("Không xác định vai trò người dùng!");
@@ -206,7 +206,7 @@ function forgotPass(){
 }
 //6. Lấy thông tin sinh viên - trangChu.html
 function getProfile(){
-    if (!window.location.pathname.includes("trangChu.html")) return;
+    if (!window.location.pathname.includes("/student_html/trangChu.html")) return;
 
     fetch(`${API_BASE}/api/student/profile`, {method: 'get', credentials: 'include'}) //gửi cookie để xác thực
     .then(function(response){

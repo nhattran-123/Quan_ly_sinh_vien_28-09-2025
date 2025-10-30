@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <title>Trang Chủ Admin</title>
-    <link rel="stylesheet" href="../../static/style.css">
+    <link rel="stylesheet" href="../../static/style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    </head>
+</head>
 <body>
     <div class="page-container">
         <header class="page-header">
@@ -21,32 +21,31 @@
             <aside class="sidebar-nav">
                 <ul>
                     <li class="active"><a href="trangChu.html">Trang chủ</a></li>
-                    <li><a href="dashboard.html">Bảng điều khiển</a></li>
                     <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
-                    <li><a href="#">Quản lý Khoa</a></li>
-                    <li><a href="#">Quản lý Giảng viên</a></li>
-                    <li><a href="#">Quản lý Sinh viên</a></li>
+                    <li><a href="#">Danh sách Khoa</a></li>
+                    <li><a href="#">Danh sách giảng viên từng khoa</a></li>
+                    <li><a href="#">Danh sách sinh viên từng khoa</a></li>
                     <li><a href="../index.html#logout" onclick="document.getElementById('logoutForm').requestSubmit();">Đăng Xuất</a></li>
                 </ul>
             </aside>
 
             <main class="content-area">
-                <section class="info-box bordered form-container">
-                    <h2 class="content-title form-title" style="color: red;">Thông tin cá nhân</h2>
+                <section class="info-box bordered form-container" style="max-width: 500px; padding: 30px; box-shadow: none;">
+                    <h2 class="content-title form-title" style="color: red; text-align: left; border-bottom: 2px solid #e9ecef;">Thông tin cá nhân</h2>
                     <dl>
                         <dt>Mã:</dt><dd id="adminId">Đang tải...</dd>
                         <dt>Họ và tên:</dt><dd id="fullName">Đang tải...</dd>
                         <dt>Email:</dt><dd id="email">Đang tải...</dd>
-                        <dt>Chức danh:</dt><dd id="role">Đang tải...</dd>
+                        <dt>Chức danh:</dt><dd id="role">Đang tải...</dd> 
                     </dl>
                     <form id="logoutForm" hidden></form>
                 </section>
+                
+                <footer class="page-footer" style="position: absolute; bottom: 10px; right: 30px; border-top: none; background-color: transparent;">
+                    Phiên bản 1
+                </footer>
             </main>
         </div>
-
-        <footer class="page-footer">
-            Phiên bản 1
-        </footer>
     </div>
 
     <script src="../../static/form.js"></script>
@@ -55,11 +54,13 @@
 
         // Hàm tải thông tin Admin
         function loadAdminProfile() {
+            // Gọi API lấy thông tin Admin
             fetch(`${API_BASE}/api/admin/userinfor`, { method: 'GET', credentials: 'include' })
                 .then(response => {
-                    if (response.status === 401) {
-                         // Redirect về trang đăng nhập nếu chưa đăng nhập/hết phiên
-                        window.location.href = "../index.html"; 
+                    // Xử lý lỗi 401/403 (Chưa đăng nhập/Không có quyền)
+                    if (response.status === 401 || response.status === 403) {
+                        console.warn(`Lỗi xác thực: ${response.status}. Redirecting to login.`);
+                        window.location.href = "../index.html"; // Chuyển về trang đăng nhập
                         return Promise.reject('Chưa đăng nhập');
                     }
                     if (!response.ok) {
@@ -70,21 +71,17 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Cập nhật thông tin trên header và main content
+                    // Đổ dữ liệu vào các thẻ HTML
                     document.getElementById('userNameHeader').textContent = data["Họ và Tên"] || 'Admin';
                     document.getElementById('adminId').textContent = data.id || '';
                     document.getElementById('fullName').textContent = data["Họ và Tên"] || '';
                     document.getElementById('email').textContent = data.email || '';
                     document.getElementById('role').textContent = data["Chức danh"] || '';
-                    
-                    // Cập nhật tên Admin vào sidebar (nếu cần)
-                    const sidebarWelcome = document.querySelector('.sidebar-nav h1');
-                    if (sidebarWelcome) sidebarWelcome.textContent = `Xin chào, ${data["Họ và Tên"] || 'Admin'}`;
-
                 })
                 .catch(error => {
                     if (error !== 'Chưa đăng nhập') {
                         console.error("Lỗi tải thông tin Admin:", error);
+                        // Chỉ cảnh báo, không alert nếu là lỗi chuyển hướng đã xử lý
                         alert("Không thể tải thông tin quản trị viên: " + error.message);
                     }
                 });
@@ -92,11 +89,9 @@
 
         // Chờ DOM load xong để gọi hàm tải thông tin
         document.addEventListener('DOMContentLoaded', function() {
-            loadAdminProfile();
-            // Đảm bảo Logout được kích hoạt từ form.js
-            // Nếu bạn muốn dùng nút Đăng xuất trên trang này
-            // thì cần đảm bảo form.js đã tải và hàm Logout() đã được gọi
-            // (Hiện tại form.js gọi Logout() ở cuối file, nên ta có thể dựa vào đó)
+            // Tắt hàm getProfile() của sinh viên nếu nó được gọi trong form.js
+            // và gọi hàm loadAdminProfile của Admin thay thế
+            loadAdminProfile(); 
         });
     </script>
 </body>
