@@ -38,7 +38,7 @@ admin_bp = Blueprint('admin', __name__)
 def load_user(user_id):
     return User.query.get(user_id)
 
-@admin_bp.route('/userinfor', methods=["GET"])
+@admin_bp.route('/userinfo', methods=["GET"])
 @fresh_login_required
 def userinfor():
     if current_user.role != 'admin':

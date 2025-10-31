@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trang Chủ Giảng Viên</title>
+    <link rel="stylesheet" href="../../static/style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-left">
+                <h1>Xin chào, <span id="userNameHeader">Đang tải...</span></h1>
+            </div>
+            <div class="header-right">
+                Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+            </div>
+        </header>
+
+        <div class="page-body">
+            <aside class="sidebar-nav">
+                <ul>
+                    <li class="active"><a href="trangChu.html">Trang chủ</a></li>
+                    <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+                    <li><a href="edit_info.html">Cập nhật thông tin</a></li>
+                    <li><a href="classlist.html">Các lớp giảng dạy</a></li>
+                    <li><a href="../index.html#logout" onclick="document.getElementById('logoutForm').requestSubmit();">Đăng Xuất</a></li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                <section class="info-box shaded form-container" style="max-width: 700px;">
+                    <h2 class="content-title form-title">Thông tin giảng viên</h2>
+                    <dl>
+                        <dt>Mã Giảng viên:</dt><dd id="lecturerId">Đang tải...</dd>
+                        <dt>Họ và Tên:</dt><dd id="fullName">Đang tải...</dd>
+                        <dt>Ngày Sinh:</dt><dd id="dateOfBirth">Đang tải...</dd>
+                        <dt>Email:</dt><dd id="email">Đang tải...</dd>
+                        <dt>Chức danh:</dt><dd id="role">Giảng viên</dd> 
+                    </dl>
+                </section>
+
+                <section class="info-box bordered" style="max-width: 700px;">
+                    <h2 class="content-title">Thông tin công tác</h2>
+                    <dl>
+                        <dt>Khoa:</dt><dd id="department">Đang tải...</dd>
+                        <dt>Chức vụ:</dt><dd id="position">Đang tải...</dd>
+                    </dl>
+                    <form id="logoutForm" hidden action="../../api/auth/logout" method="POST"></form>
+                </section>
+                
+                <footer class="page-footer" style="position: absolute; bottom: 10px; right: 30px; border-top: none; background-color: transparent;">
+                    Phiên bản 1
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <script src="../../static/form.js"></script>
+    <script>
+        
+
+        // Hàm tải thông tin Giảng viên
+        function loadLecturerProfile() {
+            // Chỉ chạy nếu đang ở trang trangChu.html của giảng viên
+            if (!window.location.pathname.includes("/lecturer/trangChu.html")) return;
+
+            // Gọi API lấy thông tin Giảng viên
+            fetch(`${API_BASE}/api/lecturer/userinfor`, { method: 'GET', credentials: 'include' }) //
+                .then(response => {
+                    // Xử lý lỗi 401/403 (Chưa đăng nhập/Không có quyền)
+                    if (response.status === 401) {
+                        console.warn(`Lỗi xác thực: ${response.status}. Redirecting to login.`);
+                        window.location.href = "../index.html"; // Chuyển về trang đăng nhập
+                        return Promise.reject('Chưa đăng nhập');
+                    }
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.message || 'Lỗi tải dữ liệu');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Đổ dữ liệu vào các thẻ HTML
+                    const details = data.details || {}; // Lấy thông tin chi tiết
+                    
+                    document.getElementById('userNameHeader').textContent = data["Họ và Tên"] || 'Giảng viên';
+                    document.getElementById('lecturerId').textContent = data.id || '';
+                    document.getElementById('fullName').textContent = data["Họ và Tên"] || '';
+                    document.getElementById('dateOfBirth').textContent = data["Ngày sinh"] || 'Chưa cập nhật'; // API trả về "Ngày sinh"
+                    document.getElementById('email').textContent = data.email || '';
+                    document.getElementById('role').textContent = data["Chức danh"] || 'Giảng viên'; // API trả về "Chức danh"
+
+                    document.getElementById('department').textContent = details["Tên Khoa"] || 'N/A'; // API trả về "Tên Khoa" trong details
+                    document.getElementById('position').textContent = details["Chức vụ"] || 'N/A'; // API trả về "Chức vụ" trong details
+                })
+                .catch(error => {
+                    if (error !== 'Chưa đăng nhập') {
+                        console.error("Lỗi tải thông tin Giảng viên:", error);
+                        alert("Không thể tải thông tin: " + error.message);
+                    }
+                });
+        }
+
+        // Chờ DOM load xong để gọi hàm tải thông tin
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gọi hàm tải thông tin Giảng viên
+            loadLecturerProfile(); 
+        });
+    </script>
+</body>
+</html>
