@@ -462,7 +462,7 @@ function loadCourseDetail() {
         console.error("Lỗi khi tải thông tin lớp:", err);
     });
 }
-//11. Lấy danh sách sinh viên cùng lớp
+// 11. Lấy danh sách sinh viên cùng lớp
 function studentList() {
     // Chỉ chạy nếu đang ở trang ds_banHoc.html
     if (!window.location.pathname.includes("ds_banHoc.html")) return;
@@ -471,22 +471,37 @@ function studentList() {
     const classId = params.get("class_id");
     const termId = params.get("term_id");
 
-    if (!classId || !termId) {
-        alert("Thiếu thông tin lớp hoặc kỳ học trong URL!");
-        return;
-    }
-
     const tbody = document.getElementById("classmate");
+    
+    if (!tbody) return; // Thêm kiểm tra tbody tồn tại
+
     tbody.dataset.class = classId;
     tbody.dataset.term = termId;
 
+    if (!classId || !termId) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color: red;">Thiếu thông tin lớp hoặc kỳ học trong URL!</td></tr>`;
+        return;
+    }
+
     // --- Gọi API lấy danh sách sinh viên ---
     fetch(`${API_BASE}/api/student/list-student/${classId}/${termId}`, {method: "GET", credentials: "include"})
-    .then(res => res.json())
+    .then(res => {
+        // --- SỬA LỖI: KIỂM TRA res.ok TRƯỚC ---
+        if (!res.ok) {
+            // Nếu có lỗi (403, 404), đọc JSON lỗi và ném ra Error
+            return res.json().then(errData => {
+                throw new Error(errData.message || errData.error || `Lỗi ${res.status}`);
+            });
+        }
+        // Nếu thành công (200), đọc JSON mảng data
+        return res.json();
+    })
     .then(data => {
+        // 'data' ở đây chắc chắn là mảng (Array)
         tbody.innerHTML = "";
 
-        if (!Array.isArray(data) || data.length === 0) {
+        if (data.length === 0) {
+            // API của bạn sẽ trả 404 nếu mảng rỗng, nhưng để đây cho chắc
             tbody.innerHTML = `<tr><td colspan="5">Không có sinh viên nào trong lớp này.</td></tr>`;
             return;
         }
@@ -498,15 +513,17 @@ function studentList() {
                 <td>${st["Họ và tên"]}</td>
                 <td>${st.id}</td>
                 <td>${st.email}</td>
-                <td>${st["Ngày sinh"]}</td>
+                <td>${st["Ngày sinh"] || ''}</td>
             </tr>
             `;
             tbody.innerHTML += row;
         });
     })
     .catch(err => {
+        // --- SỬA LỖI: Hiển thị lỗi ra bảng ---
         console.error("Lỗi khi tải danh sách sinh viên:", err);
-        alert("Không thể tải danh sách sinh viên: " + err.message);
+        // Giờ đây 'err.message' sẽ là thông báo từ API (vd: "Bạn không thuộc lớp này...")
+        tbody.innerHTML = `<tr><td colspan="5" style="color: red;">${err.message}</td></tr>`;
     });
 }
 //12. Lấy file execl danh sách sinh viên
@@ -692,17 +709,17 @@ document.addEventListener('DOMContentLoaded',function(){
     login();
     forgotPass();
     Logout();
-    // getProfile();
-    // setProfile();
-    // getTerms();
-    // loadCourseDetail();
+    getProfile();
+    setProfile();
+    getTerms();
+    loadCourseDetail();
 
-    // studentList();
+    studentList();
     // Gắn sự kiện nút xuất Excel
     const btn = document.getElementById("excel_out");
     if (btn) btn.addEventListener("click", excelList);
 
-    //loadGrades();
-    // attendanceList();
+    loadGrades();
+    attendanceList();
 
 });
