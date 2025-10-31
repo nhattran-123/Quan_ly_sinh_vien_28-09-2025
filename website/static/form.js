@@ -692,17 +692,17 @@ document.addEventListener('DOMContentLoaded',function(){
     login();
     forgotPass();
     Logout();
-    getProfile();
-    setProfile();
-    getTerms();
-    loadCourseDetail();
+    // getProfile();
+    // setProfile();
+    // getTerms();
+    // loadCourseDetail();
 
-    studentList();
+    // studentList();
     // Gắn sự kiện nút xuất Excel
     const btn = document.getElementById("excel_out");
     if (btn) btn.addEventListener("click", excelList);
 
     //loadGrades();
-    attendanceList();
+    // attendanceList();
 
 });
