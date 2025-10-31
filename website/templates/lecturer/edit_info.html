@@ -1,31 +1,176 @@
-{% extends "base.html" %}
-{% block content %}
-<h2>Sửa thông tin giảng viên</h2>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Cập nhật thông tin Giảng viên</title>
+    <link rel="stylesheet" href="../../static/style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-left">
+                <h1>Xin chào, <span id="userNameHeader">Đang tải...</span></h1>
+            </div>
+            <div class="header-right">
+                Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+            </div>
+        </header>
 
-<form id="editForm" onsubmit="updateLecturer(event)">
-  <label>Email:</label><input type="text" id="email"><br>
-  <label>Họ tên:</label><input type="text" id="name"><br>
-  <label>Ngày sinh:</label><input type="date" id="dob"><br>
-  <button type="submit">Lưu thay đổi</button>
-</form>
+        <div class="page-body">
+            <aside class="sidebar-nav">
+                <ul>
+                    <li><a href="trangChu.html">Trang chủ</a></li>
+                    <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+                    <li class="active"><a href="edit_info.html">Cập nhật thông tin</a></li>
+                    <li><a href="classlist.html">Các lớp giảng dạy</a></li>
+                    <li><a href="../index.html#logout" onclick="document.getElementById('logoutForm').requestSubmit();">Đăng Xuất</a></li>
+                </ul>
+            </aside>
 
-<script>
-function updateLecturer(e) {
-  e.preventDefault();
-  const body = {
-    email: document.getElementById("email").value,
-    name: document.getElementById("name").value,
-    birthdate: document.getElementById("dob").value
-  };
+            <main class="content-area update-info-area">
+                <div class="info-box shaded form-container">
+                    <h2 class="content-title form-title">Cập nhật thông tin cá nhân</h2>
+                    <form id="editLecturerInfoForm">
+                        <div class="form-group">
+                            <label for="id">Mã Giảng viên (Không sửa được):</label>
+                            <input type="text" id="id" value="Đang tải..." readonly />
+                        </div>
+                        <div class="form-group">
+                            <label for="full_name">Họ và tên:</label>
+                            <input type="text" id="full_name" value="Đang tải..." required/>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" value="Đang tải..." required />
+                        </div>
+                        <div class="form-group">
+                            <label for="date_of_birth">Ngày sinh (dd-mm-yyyy):</label>
+                            <input type="text" id="date_of_birth" placeholder="dd-mm-yyyy" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="position">Chức vụ:</label>
+                            <input type="text" id="position" value="Đang tải..." required />
+                        </div>
+                        <button type="submit" class="update-button">Thay Đổi</button>
+                    </form>
+                    <form id="logoutForm" hidden action="../../api/auth/logout" method="POST"></form>
+                </div>
+            </main>
+        </div>
 
-  fetch('http://127.0.0.1:5000/api/lecturer/update_lecturer', {
-    method: 'PUT',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body),
-    credentials: 'include'
-  })
-  .then(res => res.json())
-  .then(data => alert("Cập nhật thành công!"));
-}
-</script>
-{% endblock %}
+        <footer class="page-footer">
+            Phiên bản 1
+        </footer>
+    </div>
+
+    <script src="../../static/form.js"></script>
+    <script>
+
+        // Hàm chuyển đổi định dạng ngày: YYYY-MM-DD (input date) sang DD-MM-YYYY (API)
+        function formatDate_YYYYMMDD_to_DDMMYYYY(dateString) {
+            if (!dateString) return "";
+            const parts = dateString.split('-'); // Giả sử format là YYYY-MM-DD
+            if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+            return dateString;
+        }
+
+        // Hàm chuyển đổi định dạng ngày: DD-MM-YYYY (API) sang YYYY-MM-DD (input date)
+        function formatDate_DDMMYYYY_to_YYYYMMDD(dateString) {
+            if (!dateString || !/^\d{2}-\d{2}-\d{4}$/.test(dateString)) return "";
+            const parts = dateString.split('-'); // Giả sử format là DD-MM-YYYY
+            return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD
+        }
+
+        // --- Hàm tải thông tin hiện tại và điền vào form ---
+        function loadCurrentInfo() {
+            fetch(`${API_BASE}/api/lecturer/userinfor`, { method: 'GET', credentials: 'include' })
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = "../index.html";
+                        return Promise.reject('Chưa đăng nhập');
+                    }
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.message || 'Lỗi tải dữ liệu');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const details = data.details || {};
+                    const dob_ddmmyyyy = data["Ngày sinh"] || "";
+
+                    // Cập nhật header và form
+                    document.getElementById('userNameHeader').textContent = data["Họ và Tên"] || 'Giảng viên';
+                    document.getElementById('id').value = data.id || '';
+                    document.getElementById('full_name').value = data["Họ và Tên"] || '';
+                    document.getElementById('email').value = data.email || '';
+                    document.getElementById('date_of_birth').value = dob_ddmmyyyy;
+                    document.getElementById('position').value = details["Chức vụ"] || '';
+                })
+                .catch(error => {
+                    if (error !== 'Chưa đăng nhập') {
+                        console.error("Lỗi tải thông tin Giảng viên:", error);
+                        alert("Không thể tải thông tin: " + error.message);
+                    }
+                });
+        }
+
+        // --- Hàm xử lý gửi form cập nhật ---
+        function updateLecturer(event) {
+            event.preventDefault();
+            
+            const newFullName = document.getElementById("full_name").value.trim();
+            const newEmail = document.getElementById("email").value.trim();
+            const dob_ddmmyyyy = document.getElementById("date_of_birth").value.trim();
+            const newPosition = document.getElementById("position").value.trim();
+
+            if (!/^\d{2}-\d{2}-\d{4}$/.test(dob_ddmmyyyy)) {
+                alert("Ngày sinh phải theo định dạng dd-mm-YYYY.");
+                return;
+            }
+
+            const body = {
+                full_name: newFullName,
+                email: newEmail,
+                date_of_birth: dob_ddmmyyyy,
+                position: newPosition // Trường này được hỗ trợ trong API của bạn
+            };
+
+            fetch(`${API_BASE}/api/lecturer/update_lecturer`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Cập nhật thất bại: " + (data.message || data.error));
+                } else {
+                    alert(data.message || "Cập nhật thông tin thành công!");
+                    // Cập nhật lại tên trên Header
+                    document.getElementById('userNameHeader').textContent = newFullName || 'Giảng viên';
+                }
+            })
+            .catch(err => {
+                console.error("Lỗi khi gửi yêu cầu cập nhật:", err);
+                alert("Không thể gửi yêu cầu cập nhật. Lỗi: " + err.message);
+            });
+        }
+
+        // --- Chờ DOM load xong ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tải thông tin hiện tại vào form
+            loadCurrentInfo();
+
+            // Gắn sự kiện submit cho form
+            const form = document.getElementById('editLecturerInfoForm');
+            if (form) {
+                form.addEventListener('submit', updateLecturer);
+            }
+        });
+    </script>
+</body>
+</html>

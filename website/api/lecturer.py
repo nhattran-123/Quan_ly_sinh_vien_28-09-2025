@@ -163,7 +163,7 @@ def update_lecturer():
     if current_user.role != 'lecturer':
         return jsonify({"error": "Không thành công", "message": "Bạn không có quyền truy cập"}), 403
     
-    lecturer = Lecturer.query.filter_by(user_id=current_user).first()
+    lecturer = Lecturer.query.filter_by(user_id=current_user.id).first()
     if not lecturer:
         return jsonify({"error": "Lỗi CSDL", "message": "Dữ liệu giảng viên không đồng nhất"}), 500
         
@@ -183,7 +183,7 @@ def update_lecturer():
         dob_str = data.get('date_of_birth')
         if dob_str:
             try:
-                current_user.date_of_birth = datetime.strptime(dob_str, "%d-%m-%Y").date()
+                current_user.date_of_birth = datetime.strptime(dob_str, "%d-%m-%Y")
             except ValueError:
                 return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
 
