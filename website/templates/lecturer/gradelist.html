@@ -34,6 +34,7 @@
             border-radius: 4px; 
             cursor: pointer; 
             font-size: 12px;
+            white-space: nowrap;
         }
         .score-input.changed-score {
             border: 2px solid #ff9800 !important; /* Màu cam nổi bật khi thay đổi */
@@ -42,6 +43,16 @@
             background-color: #2196F3; /* Màu xanh dương theo mẫu */
             color: white;
             padding: 10px;
+        }
+        .score-input {
+            width: 60px; 
+            text-align: center; 
+            border: 1px solid #ccc; 
+            padding: 5px;
+        }
+        .final-score {
+            font-weight: bold;
+            color: #c00; /* Màu đỏ nổi bật cho điểm cuối cùng */
         }
     </style>
 </head>
@@ -59,7 +70,7 @@
                     <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
                     <li><a href="edit_info.html">Cập nhật thông tin</a></li>
                     <li><a href="classlist.html">Các lớp giảng dạy</a></li>
-                    <li><a href="../index.html#logout">Đăng Xuất</a></li>
+                    <li><a href="../index.html#logout" onclick="document.getElementById('logoutForm').requestSubmit();">Đăng Xuất</a></li>
                 </ul>
             </aside>
 
@@ -70,11 +81,11 @@
                     <button onclick="window.location.href='classlist.html'" style="background-color: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-bottom: 15px;">
                         <i class="fas fa-arrow-left"></i> Quay lại Danh sách lớp
                     </button>
-                    <form id="uploadForm" style="display: flex; gap: 10px; align-items: center;">
+                    <form id="uploadForm" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
                         <label for="fileInput" style="font-weight: bold;">Tải lên điểm từ Excel:</label>
                         <input type="file" id="fileInput" accept=".xlsx,.xls" required>
                         <button type="submit" style="background-color: #3f51b5; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
-                            Upload điểm lớp
+                            <i class="fas fa-upload"></i> Upload điểm lớp
                         </button>
                     </form>
                 </div>
@@ -84,6 +95,7 @@
                 <h3 style="margin-top: 20px;">Biểu đồ phân phối điểm</h3>
                 <div style="max-width: 400px; margin: 20px auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <canvas id="chart" width="400" height="400"></canvas>
+                    <p id="chartStatus" style="text-align: center; margin-top: 10px;"></p>
                 </div>
                 
                 <hr style="margin: 20px 0;">
@@ -98,12 +110,12 @@
                     <table class="danhSach grades-table" id="tblGrades">
                         <thead></thead>
                         <tbody>
-                            <tr><td colspan="6" style="text-align: center;">Đang tải dữ liệu điểm...</td></tr>
+                            <tr><td colspan="7" style="text-align: center;">Đang tải dữ liệu điểm...</td></tr>
                         </tbody>
                     </table>
                 </div>
 
-                <form id="logoutForm" hidden></form>
+                <form id="logoutForm" hidden action="../../api/auth/logout" method="POST"></form>
             </main>
         </div>
 
@@ -113,97 +125,114 @@
     <script src="../../static/form.js"></script>
     <script>
         
+        
         const class_id = new URLSearchParams(window.location.search).get("class_id");
         const tblGrades = document.getElementById('tblGrades');
         const studentSearch = document.getElementById('studentSearch');
-        document.getElementById('classIdDisplay').textContent = class_id;
+        const chartStatus = document.getElementById('chartStatus');
+        document.getElementById('classIdDisplay').textContent = class_id || 'N/A';
 
         let allGradesData = []; // Biến toàn cục lưu trữ toàn bộ dữ liệu điểm
 
-        // Cấu hình màu cho nút Lưu (Đã khai báo style nội tuyến)
-        const SAVE_BUTTON_STYLE = "background-color: #4CAF50; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;";
-        const EDITABLE_KEYS = ["Điểm Chuyên cần", "Điểm Giữa kỳ", "Điểm Cuối kỳ"];
-        const FIXED_KEYS = ["STT", "MSSV", "Họ và Tên", "Điểm Tổng kết"];
-        const DB_ID_KEY = "grade_id";
+        // Các cột cố định (không phải là điểm thành phần)
+        const FIXED_INFO_KEYS = ["student_id", "Họ và Tên"];
+        const FIXED_RESULT_KEYS = ["Tổng kết", "Điểm chữ"];
         
-        // Ánh xạ tên hiển thị sang tên trường trong CSDL (cần đảm bảo khớp với API Python)
-        const DB_FIELD_MAP = {
-            "Điểm Chuyên cần": "attendance_score",
-            "Điểm Giữa kỳ": "midterm_score",
-            "Điểm Cuối kỳ": "final_score"
-        };
-
+        // Tên các cột điểm sẽ được xác định dynamically từ API
 
         /**
          * Hàm so sánh chuỗi có dấu tiếng Việt
-         * Dùng để sắp xếp theo bảng chữ cái.
          */
         function compareVietnamese(a, b) {
-            return a.localeCompare(b, 'vi', { sensitivity: 'base' });
+            return (a || "").localeCompare((b || ""), 'vi', { sensitivity: 'base' });
         }
-
+        
+        /**
+         * Hàm tải tên giảng viên cho header
+         */
+        function loadLecturerName() {
+            fetch(`${API_BASE}/api/auth/current_user`, { method: 'GET', credentials: 'include' })
+                .then(response => {
+                    if (response.status === 401) { window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập'); }
+                    if (!response.ok) throw new Error('Không thể lấy thông tin người dùng');
+                    return response.json();
+                })
+                .then(data => {
+                    const userNameHeader = document.getElementById('userNameHeader');
+                    if (userNameHeader) userNameHeader.textContent = data["Họ và Tên"] || 'Giảng viên';
+                })
+                .catch(err => {
+                    if (err !== 'Chưa đăng nhập') console.error("Lỗi tải tên người dùng:", err);
+                });
+        }
+        
         /**
          * Hàm vẽ bảng điểm từ dữ liệu đã lọc/sắp xếp
          */
-        function renderGradesTable(grades) {
+        function renderGradesTable(grades, scoreKeys) {
             const thead = tblGrades.querySelector('thead');
             const tbody = tblGrades.querySelector('tbody');
             tbody.innerHTML = ''; // Xóa trạng thái đang tải
+            
+            const totalCols = 3 + scoreKeys.length + FIXED_RESULT_KEYS.length + 1; // +1 cho STT
 
             if (!Array.isArray(grades) || grades.length === 0) {
                 thead.innerHTML = '';
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Không tìm thấy sinh viên nào phù hợp.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${totalCols}" style="text-align: center;">Không tìm thấy sinh viên nào phù hợp.</td></tr>`;
                 return;
             }
 
             // Sắp xếp theo Bảng chữ cái (cột "Họ và Tên")
             grades.sort((a, b) => compareVietnamese(a["Họ và Tên"], b["Họ và Tên"]));
 
-            const allKeys = [...FIXED_KEYS.slice(0, 3), ...EDITABLE_KEYS, FIXED_KEYS[3], "Chức năng"];
-
             // 1. Vẽ Header (Thead)
-            thead.innerHTML = `<tr>${allKeys.map(k => `<th>${k}</th>`).join('')}</tr>`;
+            const headerTitles = ["STT", "MSSV", "Họ và Tên", ...scoreKeys, ...FIXED_RESULT_KEYS, "Chức năng"];
+            thead.innerHTML = `<tr>${headerTitles.map(k => `<th style="min-width: ${k.includes("Tổng kết") || k.includes("Điểm chữ") ? '80px' : '60px'}">${k}</th>`).join('')}</tr>`;
             
             // 2. Vẽ Body (Tbody)
             grades.forEach((row, index) => {
-                let rowHtml = `<tr>`;
-                let gradeId = row[DB_ID_KEY]; 
+                let rowHtml = `<tr data-student-id="${row.student_id}">`;
                 
-                // Cập nhật STT lại sau khi sắp xếp
-                row["STT"] = index + 1;
+                rowHtml += `<td>${index + 1}</td>`; // STT
 
-                allKeys.forEach(key => {
-                    if (key === "Chức năng") {
-                        // Cột Chức năng: Nút Lưu
-                        rowHtml += `<td style="text-align: center;">
-                            <button class="save-btn" data-id="${gradeId}" style="${SAVE_BUTTON_STYLE}">
-                                <i class="fas fa-save"></i> Lưu
-                            </button>
-                        </td>`;
-                    } else if (EDITABLE_KEYS.includes(key)) {
-                        // Các cột điểm có thể chỉnh sửa: dùng input number
-                        const score = row[key] !== null ? row[key] : '';
-                        rowHtml += `<td>
-                            <input type="number" 
-                                   class="score-input" 
-                                   data-key="${key}" 
-                                   data-initial-value="${score}"
-                                   value="${score}" 
-                                   min="0" max="10" step="0.1" 
-                                   style="width: 60px; text-align: center; border: 1px solid #ccc; padding: 5px;" 
-                                   onchange="handleInputChange(this)">
-                        </td>`;
-                    } else {
-                        // Các cột khác (STT, MSSV, Tên, Tổng kết)
-                        rowHtml += `<td>${row[key] ?? ""}</td>`;
-                    }
+                // Cột MSSV và Họ và Tên
+                rowHtml += `<td>${row.student_id}</td>`; 
+                rowHtml += `<td>${row["Họ và Tên"]}</td>`; 
+                
+                // Cột điểm có thể chỉnh sửa: dùng input number
+                scoreKeys.forEach(key => {
+                    const score = row[key] !== undefined && row[key] !== null ? row[key] : '';
+                    rowHtml += `<td>
+                        <input type="number" 
+                               class="score-input" 
+                               data-key="${key}" 
+                               data-initial-value="${score}"
+                               value="${score}" 
+                               min="0" max="10" step="0.1" 
+                               onchange="handleInputChange(this)">
+                    </td>`;
                 });
+                
+                // Cột kết quả cuối cùng (không chỉnh sửa)
+                const finalScore = row["Tổng kết"] !== null ? row["Tổng kết"] : '';
+                const letterGrade = row["Điểm chữ"] || '';
+                
+                rowHtml += `<td class="final-score" style="color: ${letterGrade === 'F' ? '#f44336' : 'inherit'}">${finalScore}</td>`;
+                rowHtml += `<td class="final-score">${letterGrade}</td>`;
+                
+                // Cột Chức năng: Nút Lưu
+                const saveButtonHtml = `
+                    <button class="save-btn" data-student-id="${row.student_id}">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>`;
+
+                rowHtml += `<td style="text-align: center; width: 100px;">${saveButtonHtml}</td>`;
                 rowHtml += `</tr>`;
                 tbody.innerHTML += rowHtml;
             });
 
-            // 3. Gắn sự kiện cho các nút Lưu
-            document.querySelectorAll('.save-btn').forEach(button => {
+            // 3. Gắn sự kiện cho các nút Lưu (Event delegation là tốt nhất, nhưng ở đây dùng trực tiếp)
+            tbody.querySelectorAll('.save-btn').forEach(button => {
                 button.addEventListener('click', handleSaveGrade);
             });
         }
@@ -211,10 +240,19 @@
         /**
          * Hàm xử lý thay đổi input, thêm class 'changed-score'
          */
-        function handleInputChange(input) {
+        window.handleInputChange = function(input) {
             const currentValue = input.value === '' ? null : parseFloat(input.value);
             const initialValue = input.getAttribute('data-initial-value') === '' ? null : parseFloat(input.getAttribute('data-initial-value'));
             
+            // Kiểm tra ràng buộc giá trị
+            if (currentValue !== null && (currentValue < 0 || currentValue > 10)) {
+                input.classList.add('changed-score'); // Vẫn highlight để báo lỗi
+                input.style.borderColor = 'red';
+                return;
+            }
+            
+            input.style.borderColor = '#ccc';
+
             // So sánh giá trị hiện tại với giá trị ban đầu để quyết định highlight
             if (currentValue !== initialValue) {
                 input.classList.add('changed-score');
@@ -228,26 +266,43 @@
          * Hàm tải danh sách điểm và lưu vào biến toàn cục
          */
         function loadGrades() {
+            if (!class_id) {
+                tblGrades.querySelector('tbody').innerHTML = `<tr><td colspan="7" style="color: red; text-align: center;">Thiếu Mã lớp (class_id) trong URL.</td></tr>`;
+                return;
+            }
+            
+            tblGrades.querySelector('tbody').innerHTML = `<tr><td colspan="7" style="text-align: center;">Đang tải dữ liệu điểm...</td></tr>`;
+
             fetch(`${API_BASE}/api/lecturer/grades/${class_id}`, {credentials:'include'})
             .then(res => {
                 if (res.status === 401) { window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập'); }
-                if (!res.ok) throw new Error('Lỗi tải danh sách điểm');
+                if (!res.ok) return res.json().then(err => Promise.reject(new Error(err.message || 'Lỗi tải danh sách điểm')));
                 return res.json();
             })
             .then(grades => {
                 if (!Array.isArray(grades)) {
-                    tblGrades.querySelector('tbody').innerHTML = `<tr><td colspan="6" style="text-align: center;">${grades.message || "Không có dữ liệu điểm nào."}</td></tr>`;
+                    tblGrades.querySelector('tbody').innerHTML = `<tr><td colspan="7" style="text-align: center;">${grades.message || "Không có dữ liệu điểm nào."}</td></tr>`;
                     return;
                 }
                 
-                // Lưu dữ liệu gốc và hiển thị
                 allGradesData = grades;
-                renderGradesTable(allGradesData);
+                
+                // 1. Xác định các cột điểm động (scoreKeys)
+                let scoreKeys = [];
+                if (grades.length > 0) {
+                    const firstRow = grades[0];
+                    scoreKeys = Object.keys(firstRow).filter(key => 
+                        !FIXED_INFO_KEYS.includes(key) && !FIXED_RESULT_KEYS.includes(key)
+                    );
+                }
+                
+                // 2. Lưu trữ và hiển thị
+                renderGradesTable(allGradesData, scoreKeys);
             })
             .catch(err => {
-                if (err !== 'Chưa đăng nhập') {
+                if (err.message !== 'Chưa đăng nhập') {
                     console.error("Lỗi tải danh sách điểm:", err);
-                    tblGrades.querySelector('tbody').innerHTML = `<tr><td colspan="6" style="color: red; text-align: center;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
+                    tblGrades.querySelector('tbody').innerHTML = `<tr><td colspan="7" style="color: red; text-align: center;">Lỗi tải dữ liệu: ${err.message}</td></tr>`;
                 }
             });
         }
@@ -257,19 +312,29 @@
          */
         function handleSearch() {
             const searchTerm = studentSearch.value.toLowerCase().trim();
+            
+            // Cần xác định lại scoreKeys từ allGradesData
+            let scoreKeys = [];
+            if (allGradesData.length > 0) {
+                const firstRow = allGradesData[0];
+                scoreKeys = Object.keys(firstRow).filter(key => 
+                    !FIXED_INFO_KEYS.includes(key) && !FIXED_RESULT_KEYS.includes(key)
+                );
+            }
+            
             if (!searchTerm) {
-                renderGradesTable(allGradesData); // Hiển thị lại toàn bộ nếu rỗng
+                renderGradesTable(allGradesData, scoreKeys); // Hiển thị lại toàn bộ nếu rỗng
                 return;
             }
 
             const filteredGrades = allGradesData.filter(grade => {
-                const mssv = (grade["MSSV"] || "").toLowerCase();
+                const mssv = (grade.student_id || "").toLowerCase();
                 const hoTen = (grade["Họ và Tên"] || "").toLowerCase();
                 
                 return mssv.includes(searchTerm) || hoTen.includes(searchTerm);
             });
 
-            renderGradesTable(filteredGrades);
+            renderGradesTable(filteredGrades, scoreKeys);
         }
 
         /**
@@ -277,17 +342,34 @@
          */
         function handleSaveGrade(event) {
             const button = event.currentTarget;
-            const gradeId = button.getAttribute('data-id');
+            const student_id = button.getAttribute('data-student-id');
             const row = button.closest('tr');
             
             const updatedData = {};
             let isChanged = false;
+            let isValid = true;
             
             row.querySelectorAll('.score-input.changed-score').forEach(input => {
+                const rawValue = input.value === '' ? null : input.value;
+                const value = rawValue === null ? null : parseFloat(rawValue);
+
+                // Validation
+                if (rawValue !== null && (value < 0 || value > 10 || isNaN(value))) {
+                    isValid = false;
+                    input.style.borderColor = 'red';
+                    input.focus();
+                } else {
+                    input.style.borderColor = '#ff9800'; // Keep highlight for unsaved changes
+                }
+                
                 isChanged = true;
-                const value = input.value === '' ? null : parseFloat(input.value);
-                updatedData[DB_FIELD_MAP[input.getAttribute('data-key')]] = value; // Gửi tên trường trong DB
+                updatedData[input.getAttribute('data-key')] = value; // Gửi tên trường (AssignmentType.name)
             });
+
+            if (!isValid) {
+                alert("Lỗi: Điểm phải là số và nằm trong khoảng 0-10. Vui lòng kiểm tra lại các ô được đánh dấu đỏ.");
+                return;
+            }
 
             if (!isChanged) {
                 alert("Không có thay đổi nào để lưu.");
@@ -297,17 +379,16 @@
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
 
-            fetch(`${API_BASE}/api/lecturer/grades/update`, {
-                method: "PATCH",
+            // API PUT /api/lecturer/grades/<class_id>/<student_id>
+            fetch(`${API_BASE}/api/lecturer/grades/${class_id}/${student_id}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    grade_id: gradeId,
-                    updates: updatedData
-                }),
+                body: JSON.stringify(updatedData),
                 credentials: "include"
             })
             .then(res => {
                 if (res.status === 401) { alert("Phiên đăng nhập hết hạn."); window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập'); }
+                // Kiểm tra response body để xem lỗi
                 if (!res.ok) return res.json().then(error => Promise.reject(error));
                 return res.json();
             })
@@ -332,48 +413,68 @@
          */
         function loadDistributionChart() {
             const ctx = document.getElementById('chart');
-            if (ctx) {
-                 // Xóa biểu đồ cũ nếu có
-                const chartInstance = Chart.getChart(ctx);
-                if (chartInstance) {
-                    chartInstance.destroy();
+            if (!ctx) return;
+            
+            chartStatus.textContent = 'Đang tải dữ liệu biểu đồ...';
+
+            // Xóa biểu đồ cũ nếu có
+            const chartInstance = Chart.getChart(ctx);
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            fetch(`${API_BASE}/api/lecturer/grades/distribution/${class_id}`, {credentials:'include'})
+            .then(res => {
+                if (!res.ok) return res.json().then(err => Promise.reject(new Error(err.message || 'Lỗi tải dữ liệu biểu đồ')));
+                return res.json();
+            })
+            .then(data => {
+                
+                if (data.total_graded_students === 0 || !Array.isArray(data.distribution) || data.distribution.length === 0) {
+                    chartStatus.textContent = 'Chưa có đủ dữ liệu (sinh viên có điểm tổng kết) để vẽ biểu đồ.';
+                    return;
                 }
 
-                fetch(`${API_BASE}/api/lecturer/grades/distribution/${class_id}`, {credentials:'include'})
-                .then(res => res.json())
-                .then(data => {
-                    
-                    if (data.total_graded_students === 0 || !Array.isArray(data.distribution) || data.distribution.length === 0) {
-                        ctx.parentNode.innerHTML = '<p style="text-align: center;">Chưa có đủ dữ liệu để vẽ biểu đồ.</p>';
-                        return;
+                // Sắp xếp điểm chữ theo thứ tự: A, B+, B, C+, C, D+, D, F
+                const gradeOrder = ["A", "B+", "B", "C+", "C", "D+", "D", "F"];
+                data.distribution.sort((a, b) => gradeOrder.indexOf(a.name) - gradeOrder.indexOf(b.name));
+
+
+                const labels = data.distribution.map(d => `${d.name} (${d.percentage}%)`);
+                const values = data.distribution.map(d => d.value);
+                const colors = data.distribution.map(d => d.color);
+
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
+                    options: { 
+                        plugins: { 
+                            legend: { position: 'bottom' },
+                            title: { display: true, text: `Tổng số sinh viên có điểm: ${data.total_graded_students}` }
+                        },
+                        responsive: true,
+                        maintainAspectRatio: true,
                     }
-
-                    const labels = data.distribution.map(d => d.name);
-                    const values = data.distribution.map(d => d.value);
-                    const colors = data.distribution.map(d => d.color);
-
-                    new Chart(ctx, {
-                        type: 'pie',
-                        data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
-                        options: { 
-                            plugins: { legend: { position: 'bottom' } },
-                            responsive: true,
-                            maintainAspectRatio: true,
-                        }
-                    });
-                })
-                .catch(err => {
-                    console.error("Lỗi tải biểu đồ:", err);
-                    ctx.parentNode.innerHTML = '<p style="text-align: center; color: red;">Lỗi tải biểu đồ phân phối điểm.</p>';
                 });
-            }
+                chartStatus.textContent = ''; // Xóa trạng thái tải thành công
+            })
+            .catch(err => {
+                console.error("Lỗi tải biểu đồ:", err);
+                chartStatus.textContent = `Lỗi tải biểu đồ phân phối điểm: ${err.message}.`;
+            });
+            
         }
         
-        // --- Xử lý Upload giữ nguyên ---
+        // --- Xử lý Upload ---
         document.getElementById("uploadForm").onsubmit = e => {
             e.preventDefault();
-            const file = document.getElementById("fileInput").files[0];
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
             if (!file) { alert("Vui lòng chọn file Excel."); return; }
+            
+            const submitButton = e.submitter;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             
             const formData = new FormData();
             formData.append("file", file);
@@ -387,11 +488,19 @@
             .then(msg => {
                 alert(msg.message || msg.error);
                 if (msg.message && !msg.error) {
+                    // Tải lại dữ liệu sau khi upload thành công
                     loadGrades(); 
                     loadDistributionChart();
+                } else if (msg.messages && msg.messages.length > 0) {
+                     // Xử lý lỗi từ Excel file (ví dụ: lỗi định dạng ngày sinh, trùng ID)
+                     alert(`Lỗi upload Excel (${msg.messages.length} lỗi): \n- ${msg.messages.join('\n- ')}`);
                 }
             })
-            .catch(err => alert("Lỗi trong quá trình upload: " + err.message));
+            .catch(err => alert("Lỗi trong quá trình upload: " + err.message))
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-upload"></i> Upload điểm lớp';
+            });
         };
         
         // --- Gắn sự kiện tìm kiếm ---
@@ -400,7 +509,10 @@
 
         // --- Khởi tạo ---
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof Logout === 'function') Logout(); 
+            // Tải tên Giảng viên
+            loadLecturerName();
+            
+            // Tải bảng điểm và biểu đồ
             loadGrades();
             loadDistributionChart();
         });
