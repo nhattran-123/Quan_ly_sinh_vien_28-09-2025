@@ -1,37 +1,203 @@
-<h2>Danh sách sinh viên</h2>
-<table border="1" id="tblStudents">
-  <thead>
-    <tr><th>STT</th><th>ID</th><th>Họ và tên</th><th>Email</th><th>Ngày sinh</th></tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<button id="btnExcel">Tải Excel</button>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Danh sách sinh viên</title>
+    <link rel="stylesheet" href="../../static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* CSS nội tuyến để đảm bảo màu sắc đồng nhất theo mẫu */
+        .students-table th {
+            background-color: #2196F3; /* Màu xanh dương cho tiêu đề bảng */
+            color: white;
+            padding: 12px 15px;
+        }
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-container input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 300px;
+        }
+        .action-button {
+            background-color: #4CAF50; /* Màu xanh lá cho nút Tải Excel */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        .action-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-left">
+                <h1>Danh sách sinh viên lớp: <span id="classIdDisplay">Đang tải...</span></h1>
+            </div>
+            <div class="header-right">
+                Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+            </div>
+        </header>
 
-<script>
-const class_id = new URLSearchParams(window.location.search).get("class_id");
+        <div class="page-body">
+            <aside class="sidebar-nav">
+                <ul>
+                    <li><a href="trangChu.html">Trang chủ</a></li>
+                    <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+                    <li><a href="edit_info.html">Cập nhật thông tin</a></li>
+                    <li class="active"><a href="classlist.html">Các lớp giảng dạy</a></li>
+                    <li><a href="../index.html#logout">Đăng Xuất</a></li>
+                </ul>
+            </aside>
 
-fetch(`http://127.0.0.1:5000/api/lecturer/list_student/${class_id}`, {
-  credentials: 'include'
-})
-.then(res => res.json())
-.then(data => {
-  const tb = document.querySelector("#tblStudents tbody");
-  if (data.message) {
-    tb.innerHTML = `<tr><td colspan="5">${data.message}</td></tr>`;
-    return;
-  }
-  data.forEach(sv => {
-    tb.innerHTML += `<tr>
-      <td>${sv["STT"]}</td>
-      <td>${sv.id}</td>
-      <td>${sv["Họ và tên"]}</td>
-      <td>${sv.email}</td>
-      <td>${sv["Ngày sinh"] || ""}</td>
-    </tr>`;
-  });
-});
+            <main class="content-area">
+                
+                <div class="search-container">
+                    <button onclick="history.back()" style="background-color: #f44336; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </button>
+                    <label for="studentSearch">Tìm kiếm:</label>
+                    <input type="text" id="studentSearch" placeholder="Nhập MSSV hoặc Họ và Tên...">
+                </div>
 
-document.getElementById("btnExcel").onclick = () => {
-  window.open(`http://127.0.0.1:5000/api/lecturer/list_student/export-excel/${class_id}`);
-};
-</script>
+                <button id="btnExcel" class="action-button" disabled style="margin-bottom: 15px;">
+                    <i class="fas fa-file-excel"></i> Tải Excel
+                </button>
+
+                <div class="table-container">
+                    <table class="danhSach students-table" id="tblStudents">
+                        <thead>
+                            <tr><th>STT</th><th>MSSV</th><th>Họ và tên</th><th>Email</th><th>Ngày sinh</th></tr>
+                        </thead>
+                        <tbody id="tblStudentsBody">
+                            <tr><td colspan="5" style="text-align: center;">Đang tải danh sách...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+
+        <footer class="page-footer">
+            Phiên bản 1
+        </footer>
+    </div>
+    
+    <script src="../../static/form.js"></script>
+    <script>
+        
+        const class_id = new URLSearchParams(window.location.search).get("class_id");
+        const tblBody = document.getElementById('tblStudentsBody');
+        const btnExcel = document.getElementById('btnExcel');
+        const studentSearch = document.getElementById('studentSearch');
+        document.getElementById('classIdDisplay').textContent = class_id;
+
+        let allStudentsData = []; // Biến toàn cục lưu trữ toàn bộ dữ liệu
+
+        /**
+         * Hàm so sánh chuỗi có dấu tiếng Việt (dùng cho sắp xếp)
+         */
+        function compareVietnamese(a, b) {
+            return a.localeCompare(b, 'vi', { sensitivity: 'base' });
+        }
+
+        /**
+         * Hàm vẽ bảng từ dữ liệu đã lọc/sắp xếp
+         */
+        function renderStudentsTable(students) {
+            tblBody.innerHTML = ''; // Xóa nội dung cũ
+
+            if (!Array.isArray(students) || students.length === 0) {
+                tblBody.innerHTML = `<tr><td colspan="5" style="text-align: center;">Không tìm thấy sinh viên nào trong lớp này.</td></tr>`;
+                btnExcel.disabled = true;
+                return;
+            }
+
+            // Sắp xếp theo Bảng chữ cái (cột "Họ và tên")
+            students.sort((a, b) => compareVietnamese(a["Họ và tên"], b["Họ và tên"]));
+            
+            // Đánh số thứ tự lại sau khi sắp xếp
+            students.forEach((sv, index) => {
+                tblBody.innerHTML += `<tr>
+                    <td>${index + 1}</td>
+                    <td>${sv.id}</td>
+                    <td>${sv["Họ và tên"]}</td>
+                    <td>${sv.email}</td>
+                    <td>${sv["Ngày sinh"] || ""}</td>
+                </tr>`;
+            });
+
+            btnExcel.disabled = false;
+        }
+
+        /**
+         * Hàm tải dữ liệu từ API và lưu vào biến toàn cục
+         */
+        function loadStudentsList() {
+            fetch(`${API_BASE}/api/lecturer/list_student/${class_id}`, {credentials: 'include'})
+            .then(res => {
+                if (res.status === 401) { window.location.href = "../index.html"; return Promise.reject('Chưa đăng nhập'); }
+                if (!res.ok) return res.json().then(err => Promise.reject(new Error(err.message || 'Lỗi tải dữ liệu')));
+                return res.json();
+            })
+            .then(data => {
+                // API trả về mảng, lưu vào biến toàn cục và hiển thị lần đầu
+                allStudentsData = data;
+                renderStudentsTable(allStudentsData);
+            })
+            .catch(err => {
+                if (err.message !== 'Chưa đăng nhập') {
+                    console.error("Lỗi tải danh sách sinh viên:", err);
+                    tblBody.innerHTML = `<tr><td colspan="5" style="color: red; text-align: center;">${err.message}</td></tr>`;
+                    btnExcel.disabled = true;
+                }
+            });
+        }
+        
+        /**
+         * Hàm xử lý tìm kiếm sinh viên
+         */
+        function handleSearch() {
+            const searchTerm = studentSearch.value.toLowerCase().trim();
+            if (!searchTerm) {
+                renderStudentsTable(allStudentsData); // Hiển thị lại toàn bộ nếu rỗng
+                return;
+            }
+
+            const filteredStudents = allStudentsData.filter(student => {
+                const mssv = (student.id || "").toLowerCase();
+                const hoTen = (student["Họ và tên"] || "").toLowerCase();
+                
+                return mssv.includes(searchTerm) || hoTen.includes(searchTerm);
+            });
+
+            renderStudentsTable(filteredStudents);
+        }
+
+        /**
+         * Hàm xử lý tải file Excel
+         */
+        document.getElementById("btnExcel").onclick = () => {
+             // Mở tab mới để tải file từ API endpoint
+            window.open(`${API_BASE}/api/lecturer/list_student/export-excel/${class_id}`);
+        };
+
+        // --- Gắn sự kiện và Khởi tạo ---
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStudentsList();
+            studentSearch.addEventListener('keyup', handleSearch);
+            studentSearch.addEventListener('change', handleSearch);
+        });
+    </script>
+</body>
+</html>
