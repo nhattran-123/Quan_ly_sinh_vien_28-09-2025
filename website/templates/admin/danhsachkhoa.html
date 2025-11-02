@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Danh sách Khoa</title>
+    <link rel="stylesheet" href="../../static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-left">
+                <h1>Xin chào, <span id="header">Đang tải...</span></h1>
+            </div>
+            <div class="header-right">
+                Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+            </div>
+        </header>
+
+        <div class="page-body">
+            <aside class="sidebar-nav">
+                <ul>
+                    <li><a href="trangChu.html">Trang chủ</a></li>
+                    <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+                    <li class="active"><a href="danhsachkhoa.html">Danh sách Khoa</a></li>
+                    <li><a href="danhsachgv.html">Danh sách giảng viên từng khoa</a></li>
+                    <li><a href="danhsachsv.html">Danh sách sinh viên từng khoa</a></li>
+                    <li><a href="../index.html#logout">Đăng Xuất</a></li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                <div class="table-header" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                    <button id="btnExcel" class="btn-add">Thêm khoa (bằng file excel)</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="danhSach classes-table">
+                        <thead>
+                        <tr style="background-color:#ff5c5c; color:white;">
+                            <th>STT</th>
+                            <th>Tên khoa</th>
+                            <th>Mã</th>
+                            <th>Sửa</th>
+                            <th>Xóa</th>
+                        </tr>
+                        <tr>
+                            <th colspan="1"></th>
+                            <th><input type="text" id="searchTen" placeholder="&lt;tìm bằng tên&gt;" /></th>
+                            <th><input type="text" id="searchMa" placeholder="&lt;tìm bằng mã&gt;" /></th>
+                            <th colspan="2"></th>
+                        </tr>
+                        </thead>
+                        <tbody id="dsKhoa">
+                            <tr><td colspan="4" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+        <footer class="page-footer">
+        Phiên bản 1
+        </footer>
+    </div>
+
+    <script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    //1. Hiển thị tên admin ở header
+    function loadAdminInfo() {
+        fetch(`${API_BASE}/api/admin/userinfo`, { credentials: "include" })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Dữ liệu của Admin được trả về:", data);
+                if (!data || data.error) throw new Error("Không thể lấy thông tin người dùng");
+                document.getElementById("header").textContent = data["Họ và Tên"];
+            })
+            .catch(() => {
+                document.getElementById("header").textContent = "Không xác định";
+            });
+    }
+
+    //2. Tải danh sách khoa
+    function loadDepartments() {
+        const tbody = document.getElementById("dsKhoa");
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr>`;
+
+        fetch(`${API_BASE}/api/admin/list_department`, { credentials: "include" })
+            .then(res => res.json())
+            .then(data => {
+                    console.log("Dữ liệu các khoa được trả về:", data);
+                tbody.innerHTML = "";
+                if (!Array.isArray(data) || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Không có khoa nào.</td></tr>`;
+                    return;
+                }
+
+                data.forEach((dep, index) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${dep["Tên Khoa"]}</td>
+                        <td>${dep.id}</td>
+                        <td><button class="btn-edit" data-id="${dep.id}" title="Sửa"><i class="fas fa-wrench"></i></button></td>
+                        <td><button class="btn-delete" data-id="${dep.id}" title="Xóa"><i class="fas fa-trash"></i></button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Lỗi khi tải dữ liệu.</td></tr>`;
+            });
+    }
+
+    //3. Tìm kiếm theo tên / mã
+    function Search() {
+        const searchTen = document.getElementById("searchTen");
+        const searchMa = document.getElementById("searchMa");
+
+        searchTen.addEventListener("input", filterTable);
+        searchMa.addEventListener("input", filterTable);
+
+        function filterTable() {
+            const ten = searchTen.value.toLowerCase();
+            const ma = searchMa.value.toLowerCase();
+            const rows = document.querySelectorAll("#dsKhoa tr");
+            rows.forEach(row => {
+                const tds = row.querySelectorAll("td");
+                if (!tds.length) return;
+                const tenKhoa = tds[1].textContent.toLowerCase().includes(ten);
+                const maKhoa = tds[2].textContent.toLowerCase().includes(ma);
+                const match = tenKhoa && maKhoa;
+                row.style.display = match ? "" : "none";
+            });
+        }
+    }
+
+    //4. Xử lý nút Thêm khoa bằng Excel
+    function Excel() {
+        const btn = document.getElementById("btnExcel");
+        btn.addEventListener("click", () => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".xlsx,.xls"; // Chấp nhận 2 loại file
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const res = await fetch(`${API_BASE}/api/admin/upload-excel-department`, {
+                    method: "POST",
+                    credentials: "include",
+                    body: formData
+                });
+                const result = await res.json();
+                alert(result.message || "Đã xử lý file Excel!");
+                loadDepartments();
+            };
+            input.click();
+        });
+    }
+
+    //5. Sửa/Xóa (bắt sự kiện bằng delegation)
+    function EditDelete() {
+        const tbody = document.getElementById("dsKhoa");
+
+        tbody.addEventListener("click", async (e) => {
+            const editBtn = e.target.closest(".btn-edit");
+            const deleteBtn = e.target.closest(".btn-delete");
+
+            //Sửa khoa
+            if (editBtn) {
+                const id = editBtn.dataset.id;
+                const newName = prompt("Nhập tên khoa mới:");
+                if (!newName) return;
+
+                if (!confirm(`Xác nhận đổi tên khoa có mã ${id} thành "${newName}"?`)) return;
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/admin/update-department/${id}`, {
+                        method: "PUT",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: newName })
+                    });
+                    const result = await res.json();
+                    alert(result.message || "Cập nhật thành công!");
+                    loadDepartments(); // Sửa xong thì cập nhật lại thông tin bảng
+                } catch (err) {
+                    console.error("Lỗi cập nhật:", err);
+                    alert("Lỗi khi cập nhật khoa.");
+                }
+            }
+
+            // Xóa khoa
+            if (deleteBtn) {
+                const id = deleteBtn.dataset.id;
+                if (!confirm(`Bạn có chắc muốn xóa khoa có mã ${id}?`)) return;
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/admin/delete-department/${id}`, {
+                        method: "DELETE",
+                        credentials: "include"
+                    });
+
+                    // Nếu response 204 (không có body) thì không parse JSON
+                    if (res.status === 204) {
+                        alert("Đã xóa thành công!");
+                    } else {
+                        const result = await res.json();
+                        alert(result.message || "Đã xóa thành công!");
+                    }
+
+                    loadDepartments(); // Xóa xong thì cập nhật lại danh sách
+                } catch (err) {
+                    console.error("Lỗi xóa:", err);
+                    alert("Lỗi khi xóa khoa.");
+                }
+            }
+        });
+    }
+
+// Gọi khi trang load
+    document.addEventListener("DOMContentLoaded", () => {
+        loadAdminInfo();
+        loadDepartments();
+        Search();
+        Excel();
+        EditDelete();
+    });
+    </script>
+</body>
+</html>

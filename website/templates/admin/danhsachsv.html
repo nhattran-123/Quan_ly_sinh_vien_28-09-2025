@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trang Chủ Admin</title>
+    <link rel="stylesheet" href="../../static/style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="page-container">
+        <header class="page-header">
+            <div class="header-left">
+                <h1>Xin chào, <span id="header">Đang tải...</span></h1>
+            </div>
+            <div class="header-right">
+                Học viện Công nghệ Bưu chính Viễn thông (PTIT- Miền Bắc)
+            </div>
+        </header>
+
+        <div class="page-body">
+            <aside class="sidebar-nav">
+                <ul>
+                    <li><a href="trangChu.html">Trang chủ</a></li>
+                    <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+                    <li><a href="danhsachkhoa.html">Danh sách Khoa</a></li>
+                    <li><a href="danhsachgv.html">Danh sách giảng viên từng khoa</a></li>
+                    <li class="active"><a href="danhsachsv.html">Danh sách sinh viên từng khoa</a></li>
+                    <li><a href="../index.html#logout">Đăng Xuất</a></li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                <!-- Thanh chức năng -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:250px;">
+                        <select id="departmentSelect" style="padding:6px; border-radius:8px; width:100%;">
+                        <option value="">(Thanh tùy chọn các khoa)</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button id="btnAddStudent" style="background-color:#ff7d7d; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;">Thêm thủ công 1 SV</button>
+                        <button id="btnExcel" style="background-color:#ff7d7d; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;">Thêm nhiều SV (bằng file excel)</button>
+                    </div>
+                </div>
+                <!-- Bảng danh sách sinh viên-->
+                <div class="table-container"></div>
+                    <table class="danhSach classes-table" style="width:100%; border-collapse:collapse; background-color:white;">
+                        <thead>
+                            <tr style="background-color:#ff5c5c; color:white;">
+                                <th>STT</th>
+                                <th>Mã SV</th>
+                                <th>Họ và tên</th>
+                                <th>Email</th>
+                                <th>Ngày sinh</th>
+                                <th>Khóa/Năm nhập học</th>
+                                <th>Trạng thái</th>
+                                <th>Sửa</th>
+                            </tr>
+                            <tr>
+                                <th colspan="1"></th>
+                                <th><input type="text" id="searchTen" placeholder="&lt;tìm bằng tên&gt;" /></th>
+                                <th><input type="text" id="searchMa" placeholder="&lt;tìm bằng mã&gt;" /></th>
+                                <th colspan="5"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="dsSV">
+                            <tr><td colspan="7" style="text-align:center;">Vui lòng chọn khoa...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+        <footer class="page-footer">
+            Phiên bản 1
+        </footer>
+    </div>
+    <script>
+        const API_BASE = "http://127.0.0.1:5000";
+
+    //1. Hiển thị tên admin ở header
+    function header() {
+        fetch(`${API_BASE}/api/admin/userinfo`, { credentials: "include" })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Dữ liệu của Admin được trả về:", data);
+                if (!data || data.error) throw new Error("Không thể lấy thông tin người dùng");
+                document.getElementById("header").textContent = data["Họ và Tên"];
+            })
+            .catch(() => {
+                document.getElementById("header").textContent = "Không xác định";
+            });
+    }
+
+    //2. Tải danh sách khoa
+    function loadDepartments() {
+        fetch(`${API_BASE}/api/admin/list_department`, { credentials: "include" })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Dữ liệu các khoa được trả về:", data);
+                const select = document.getElementById("departmentSelect");
+                select.innerHTML = '<option value="">-- Chọn khoa --</option>';
+                data.forEach(d => {
+                    const opt = document.createElement("option");
+                    opt.value = d.id;
+                    opt.textContent = d["Tên Khoa"];
+                    select.appendChild(opt);
+                });
+            })
+            .catch(() => alert("Không thể tải danh sách khoa."));
+    }
+
+    // 3. Tải danh sách sinh viên
+    function loadStudents() {
+        const deptId = document.getElementById("departmentSelect").value;
+        if (!deptId) return;
+        fetch(`${API_BASE}/api/admin/students/${deptId}`, { credentials: "include" })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Dữ liệu các sinh viên đucợ trả về:", data);
+                const body = document.getElementById("dsSV");
+                body.innerHTML = "";
+                if (!Array.isArray(data) || data.length === 0) {
+                    body.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có sinh viên nào.</td></tr>';
+                    return;
+                }
+                data.forEach((st, index) => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${st.id}</td>
+                        <td>${st["Họ và Tên"]}</td>
+                        <td>${st.email}</td>
+                        <td>${st["Ngày sinh"] || ""}</td>
+                        <td>${st["Khóa học"]}</td>
+                        <td>${st["Trạng thái"]}</td>
+                        <td>
+                            <button class="btn-edit" data-id="${st.id}"><i class="fa fa-wrench"></i></button>
+                         </td>
+                    `;
+                    body.appendChild(tr);
+                });
+            })
+            .catch(err => console.error("Lỗi tải sinh viên:", err));
+    }
+
+    //4. Thêm thủ công 1 sinh viên
+    function addSV() {
+        const deptId = document.getElementById("departmentSelect").value;
+        if (!deptId) return alert("Vui lòng chọn khoa trước!");
+
+        const id = prompt("Nhập mã sinh viên:");
+        if (!id) return;
+
+        const fullname = prompt("Nhập họ và tên:");
+        if (!fullname) return;
+
+        const email = prompt("Nhập email:");
+        if (!email) return;
+
+        const dob = prompt("Nhập ngày sinh (dd-mm-yyyy):");
+        const password = prompt("Nhập mật khẩu:");
+        const entryYear = prompt("Nhập năm nhập học:");
+        const status = prompt("Nhập trạng thái (VD: Đang học, Tốt nghiệp...):");
+
+        if (!confirm(`Xác nhận thêm sinh viên:\n${id} - ${fullname}`)) return;
+
+        fetch(`${API_BASE}/api/admin/add_student/${deptId}`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: id,
+                password: password,
+                fullname: fullname,
+                date_of_birth: dob,
+                email: email,
+                entry_year: entryYear,
+                status: status
+            })
+        })
+        .then(res => res.json())
+        .then(result => {
+            alert(result.message || "Thêm thành công!");
+            loadStudents();
+        })
+        .catch(() => alert("Không thể thêm sinh viên!"));
+    }
+
+    //5. Sửa thông tin sinh viên
+    function Edit(id) {
+        const newEmail = prompt("Nhập email mới (để trống nếu giữ nguyên):");
+        const newName = prompt("Nhập tên mới (để trống nếu giữ nguyên):");
+        const newDob = prompt("Nhập ngày sinh mới (dd-mm-yyyy):");
+        const newYear = prompt("Nhập năm nhập học mới:");
+        const newStatus = prompt("Nhập trạng thái mới:");
+
+        if (!confirm("Xác nhận cập nhật sinh viên này?")) return;
+
+        const payload = {};
+        if (newEmail) payload.email = newEmail;
+        if (newName) payload.full_name = newName;
+        if (newDob) payload.date_of_birth = newDob;
+        if (newYear) payload.entry_year = newYear;
+        if (newStatus) payload.status = newStatus;
+
+        fetch(`${API_BASE}/api/admin/update_student/${id}`, {
+            method: "PUT",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(result => {
+            alert(result.message || "Cập nhật thành công!");
+            loadStudents();
+        })
+        .catch(() => alert("Lỗi khi cập nhật sinh viên!"));
+    }
+
+    //6. Thêm nhiều SV bằng file Excel
+    function Excel() {
+        const deptId = document.getElementById("departmentSelect").value;
+        if (!deptId) return alert("Vui lòng chọn khoa!");
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".xlsx,.xls";
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("file", file);
+            fetch(`${API_BASE}/api/admin/upload_excel_student/${deptId}`, {
+                method: "POST",
+                credentials: "include",
+                body: formData
+            })
+            .then(res => res.json())
+            .then(result => {
+                alert(result.message || "Đã xử lý file Excel!");
+                loadStudents();
+            })
+            .catch(() => alert("Lỗi khi tải file Excel!"));
+        };
+        input.click();
+    }
+
+     //7. Tìm kiếm theo tên / mã
+    function Search() {
+        const searchTen = document.getElementById("searchTen");
+        const searchMa = document.getElementById("searchMa");
+
+        searchTen.addEventListener("input", filterTable);
+        searchMa.addEventListener("input", filterTable);
+
+        function filterTable() {
+            const ten = searchTen.value.toLowerCase();
+            const ma = searchMa.value.toLowerCase();
+            const rows = document.querySelectorAll("#dsSV tr");
+            rows.forEach(row => {
+                const tds = row.querySelectorAll("td");
+                if (!tds.length) return;
+                const tenSV = tds[1].textContent.toLowerCase().includes(ten);
+                const maSV = tds[2].textContent.toLowerCase().includes(ma);
+                const match = tenSV && maSV;
+                row.style.display = match ? "" : "none";
+            });
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        header();
+        loadDepartments();
+
+        document.getElementById("departmentSelect").addEventListener("change", loadStudents);
+        document.getElementById("btnAddStudent").addEventListener("click", addSV);
+        document.getElementById("btnExcel").addEventListener("click", Excel);
+
+        document.body.addEventListener("click", function(e) {
+            const editBtn = e.target.closest(".btn-edit");
+            if (editBtn) {
+                const id = editBtn.dataset.id;
+                Edit(id);
+            }
+        });
+        Search();
+    });
+    </script>
+</body>
+</html>
