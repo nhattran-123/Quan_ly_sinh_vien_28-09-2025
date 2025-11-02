@@ -166,6 +166,28 @@
           </div>
         </div>
 
+        <!-- Overlay sửa khoa -->
+        <div id="editKhoaOverlay" class="overlay">
+          <div class="popup-box">
+            <h3>Chỉnh sửa khoa</h3>
+
+            <div class="add-field">
+              <label for="edit_khoa_id">Mã khoa:</label>
+              <input type="text" id="edit_khoa_id" disabled>
+            </div>
+
+            <div class="add-field">
+              <label for="edit_khoa_name">Tên khoa mới:</label>
+              <input type="text" id="edit_khoa_name">
+            </div>
+
+            <div class="popup-buttons">
+              <button id="btnUpdateKhoa" class="btn-red">Lưu thay đổi</button>
+              <button id="btnCancelEdit" class="btn-gray">Hủy</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Bảng danh sách khoa -->
         <div class="table-container">
           <table class="danhSach classes-table">
@@ -198,17 +220,15 @@
   <script>
     const API_BASE = "http://127.0.0.1:5000";
 
-    // 1. Header
+    // Header
     function header() {
       fetch(`${API_BASE}/api/admin/userinfo`, { credentials: "include" })
         .then(res => res.json())
-        .then(data => {
-          document.getElementById("header").textContent = data["Họ và Tên"] || "Admin";
-        })
+        .then(data => document.getElementById("header").textContent = data["Họ và Tên"] || "Admin")
         .catch(() => document.getElementById("header").textContent = "Không xác định");
     }
 
-    // 2. Load danh sách khoa
+    // Load danh sách khoa
     function loadDepartments() {
       const tbody = document.getElementById("dsKhoa");
       tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>`;
@@ -228,19 +248,14 @@
               <td>${index + 1}</td>
               <td>${dep["Tên Khoa"]}</td>
               <td>${dep.id}</td>
-              <td><button class="btn-edit" data-id="${dep.id}"><i class="fas fa-wrench"></i></button></td>
+              <td><button class="btn-edit" data-id="${dep.id}" data-name="${dep["Tên Khoa"]}"><i class="fas fa-wrench"></i></button></td>
               <td><button class="btn-delete" data-id="${dep.id}"><i class="fas fa-trash"></i></button></td>`;
             tbody.appendChild(row);
           });
-
-          // Gắn sự kiện chỉnh sửa / xóa
-          tbody.querySelectorAll(".btn-edit").forEach(btn => btn.addEventListener("click", () => editKhoa(btn.dataset.id)));
-          tbody.querySelectorAll(".btn-delete").forEach(btn => btn.addEventListener("click", () => deleteKhoa(btn.dataset.id)));
-        })
-        .catch(() => tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Lỗi khi tải dữ liệu.</td></tr>`);
+        });
     }
 
-    // 3. Upload Excel
+    // Upload Excel
     function uploadExcel() {
       const file = document.getElementById("excelFile").files[0];
       if (!file) return alert("Vui lòng chọn file Excel!");
@@ -261,7 +276,7 @@
       .catch(() => alert("Lỗi khi tải file Excel!"));
     }
 
-    // 4. Mở popup thêm khoa
+    // Thêm khoa
     function openAddForm() { document.getElementById("addKhoaOverlay").style.display = "flex"; }
     function closeAddForm() { document.getElementById("addKhoaOverlay").style.display = "none"; }
 
@@ -285,11 +300,18 @@
       .catch(() => alert("Không thể thêm khoa!"));
     }
 
-    // 5. Chỉnh sửa & Xóa khoa
-    function editKhoa(id) {
-      const newName = prompt("Nhập tên khoa mới:");
-      if (!newName) return;
-      if (!confirm(`Xác nhận cập nhật tên khoa ${id}?`)) return;
+    // Sửa khoa (mở popup)
+    function openEditForm(id, name) {
+      document.getElementById("edit_khoa_id").value = id;
+      document.getElementById("edit_khoa_name").value = name;
+      document.getElementById("editKhoaOverlay").style.display = "flex";
+    }
+    function closeEditForm() { document.getElementById("editKhoaOverlay").style.display = "none"; }
+
+    function submitEditKhoa() {
+      const id = document.getElementById("edit_khoa_id").value.trim();
+      const newName = document.getElementById("edit_khoa_name").value.trim();
+      if (!newName) return alert("Tên khoa không được để trống!");
 
       fetch(`${API_BASE}/api/admin/update-department/${id}`, {
         method: "PUT",
@@ -300,11 +322,13 @@
       .then(res => res.json())
       .then(result => {
         alert(result.message || "Cập nhật thành công!");
+        closeEditForm();
         loadDepartments();
       })
-      .catch(() => alert("Không thể cập nhật!"));
+      .catch(() => alert("Không thể cập nhật khoa!"));
     }
 
+    // Xóa khoa
     function deleteKhoa(id) {
       if (!confirm(`Bạn có chắc muốn xóa khoa ${id}?`)) return;
       fetch(`${API_BASE}/api/admin/delete-department/${id}`, {
@@ -319,7 +343,7 @@
       .catch(() => alert("Không thể xóa khoa!"));
     }
 
-    // 6. Tìm kiếm
+    // Tìm kiếm
     function searchKhoa() {
       const ten = document.getElementById("searchTen").value.toLowerCase();
       const ma = document.getElementById("searchMa").value.toLowerCase();
@@ -332,7 +356,7 @@
       });
     }
 
-    // 7. Khi load trang
+    // Sự kiện
     document.addEventListener("DOMContentLoaded", () => {
       header();
       loadDepartments();
@@ -341,8 +365,20 @@
       document.getElementById("btnAddKhoa").addEventListener("click", openAddForm);
       document.getElementById("btnCancelKhoa").addEventListener("click", closeAddForm);
       document.getElementById("btnSubmitKhoa").addEventListener("click", submitAddKhoa);
+
+      document.getElementById("btnCancelEdit").addEventListener("click", closeEditForm);
+      document.getElementById("btnUpdateKhoa").addEventListener("click", submitEditKhoa);
+
       document.getElementById("searchTen").addEventListener("input", searchKhoa);
       document.getElementById("searchMa").addEventListener("input", searchKhoa);
+
+      // Gắn sự kiện sửa/xóa sau khi tải dữ liệu
+      document.getElementById("dsKhoa").addEventListener("click", e => {
+        const edit = e.target.closest(".btn-edit");
+        const del = e.target.closest(".btn-delete");
+        if (edit) openEditForm(edit.dataset.id, edit.dataset.name);
+        if (del) deleteKhoa(del.dataset.id);
+      });
     });
   </script>
 </body>
