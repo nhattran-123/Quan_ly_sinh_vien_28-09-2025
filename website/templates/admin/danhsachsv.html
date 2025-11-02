@@ -5,6 +5,90 @@
     <title>Trang Chủ Admin</title>
     <link rel="stylesheet" href="../../static/style.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /*khung chức năng*/
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        /*chọn, up file*/
+        .upload-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .upload-area label {
+            font-weight: bold;
+            color: #333;
+        }
+        .upload-area input[type=file] {
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .upload-area button {
+            background-color: #a44646;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .btn-add-item {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1.5px solid #000;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            align-self: flex-end;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-add-item:hover {
+            background-color: #f2f2f2;
+        }
+        /* Overlay thêm mới */
+        .add-field {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .add-field label {
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #333;
+        }
+        .add-field input, .add-field select {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 100%;
+        }
+        /* Sửa thông tin SV*/
+        .edit-field {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .edit-field label {
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: #333;
+        }
+        .edit-field input, .edit-field select {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+    </style>
 </head>
 <body>
     <div class="page-container">
@@ -31,17 +115,75 @@
 
             <main class="content-area">
                 <!-- Thanh chức năng -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
-                    <div style="flex:1; min-width:250px;">
-                        <select id="departmentSelect" style="padding:6px; border-radius:8px; width:100%;">
-                        <option value="">(Thanh tùy chọn các khoa)</option>
+                <div class="toolbar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:200px;">
+                        <select id="departmentSelect" style="padding:6px; border-radius:8px; width:80%;">
+                            <option value="">-- Chọn khoa --</option>
                         </select>
                     </div>
-                    <div style="display:flex; gap:10px; margin-top:8px;">
-                        <button id="btnAddStudent" style="background-color:#ff7d7d; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;">Thêm thủ công 1 SV</button>
-                        <button id="btnExcel" style="background-color:#ff7d7d; color:white; border:none; border-radius:8px; padding:8px 12px; cursor:pointer;">Thêm nhiều SV (bằng file excel)</button>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div class="upload-area">
+                            <label for="excelFile">Tải lên từ Excel:</label>
+                            <input type="file" id="excelFile" accept=".xlsx,.xls">
+                            <button id="btnExcel"><i class="fa fa-upload"></i> Upload danh sách</button>
+                        </div>
+
+                        <button id="btnToggleForm" class="btn-add-item">+ Thêm thủ công</button>
                     </div>
                 </div>
+
+                <!-- Overlay thêm thủ công 1 SV (hiện đè lên trang)-->
+                <div id="addOverlay" 
+                    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+                            background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+                    <div style="background:#fff; padding:20px 30px; border-radius:10px; width:400px; position:relative;">
+                        <h3 style="text-align:center; color:#c0392b; margin-bottom:15px;">Thêm sinh viên mới</h3>
+
+                        <div class="add-field">
+                            <label for="newId">Mã sinh viên:</label>
+                            <input type="text" id="newId" required>
+                        </div>
+
+                        <div class="add-field">
+                            <label for="newName">Họ và tên:</label>
+                            <input type="text" id="newName" required>
+                        </div>
+
+                        <div class="add-field">
+                            <label for="newEmail">Email:</label>
+                            <input type="email" id="newEmail" required>
+                        </div>
+
+                        <div class="add-field">
+                            <label for="newDob">Ngày sinh:</label>
+                            <input type="text" id="newDob" placeholder="dd-mm-yyyy" required>
+                        </div>
+
+                        <div class="add-field">
+                            <label for="newYear">Năm nhập học:</label>
+                            <input type="text" id="newYear" required>
+                        </div>
+
+                        <div class="add-field">
+                            <label for="newPass">Mật khẩu:</label>
+                            <input type="password" id="newPass" required>
+                        </div>
+
+                        <div class="add-field">
+                            <label for="sv_status">Trạng thái:</label>
+                            <select id="sv_status">
+                                <option value="true">Đang học</option>
+                                <option value="false">Thôi học</option>
+                            </select>
+                        </div>
+
+                        <div style="text-align:center; margin-top:15px;">
+                            <button id="btnSubmitAdd" style="background:#ff5c5c; color:#fff; border:none; padding:8px 14px; border-radius:6px;">Thêm sinh viên</button>
+                            <button id="btnCancelAdd" style="background:gray; color:#fff; border:none; padding:8px 14px; border-radius:6px;">Hủy</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Bảng danh sách sinh viên-->
                 <div class="table-container"></div>
                     <table class="danhSach classes-table" style="width:100%; border-collapse:collapse; background-color:white;">
@@ -69,6 +211,47 @@
                     </table>
                 </div>
             </main>
+            <!-- sửa sinh viên (hiện đè lên trang) -->
+            <div id="editOverlay" 
+                style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+                        background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+                <div style="background:#fff; padding:20px 30px; border-radius:10px; width:400px; position:relative;">
+                    <h3 style="text-align:center; color:#c0392b; margin-bottom:15px;">Chỉnh sửa thông tin sinh viên</h3>
+
+                    <div class="edit-field">
+                        <label for="editName">Họ và tên:</label>
+                        <input type="text" id="editName" required>
+                    </div>
+
+                    <div class="edit-field">
+                        <label for="editEmail">Email:</label>
+                        <input type="email" id="editEmail" required>
+                    </div>
+
+                    <div class="edit-field">
+                        <label for="editDob">Ngày sinh:</label>
+                        <input type="text" id="editDob" placeholder="dd-mm-yyyy" required>
+                    </div>
+
+                    <div class="edit-field">
+                        <label for="editYear">Năm nhập học:</label>
+                        <input type="text" id="editYear" required>
+                    </div>
+
+                    <div class="edit-field">
+                        <label for="editStatus">Trạng thái:</label>
+                        <select id="editStatus">
+                            <option value="true">Đang học</option>
+                            <option value="false">Thôi học</option>
+                        </select>
+                    </div>
+
+                    <div style="text-align:center; margin-top:15px;">
+                    <button id="btnSaveEdit" style="background:#ff5c5c; color:#fff; border:none; padding:8px 14px; border-radius:6px;">Lưu thay đổi</button>
+                    <button id="btnCancelEdit" style="background:gray; color:#fff; border:none; padding:8px 14px; border-radius:6px;">Hủy</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <footer class="page-footer">
             Phiên bản 1
@@ -116,7 +299,7 @@
         fetch(`${API_BASE}/api/admin/students/${deptId}`, { credentials: "include" })
             .then(res => res.json())
             .then(data => {
-                console.log("Dữ liệu các sinh viên đucợ trả về:", data);
+                console.log("Dữ liệu các sinh viên đuợc trả về:", data);
                 const body = document.getElementById("dsSV");
                 body.innerHTML = "";
                 if (!Array.isArray(data) || data.length === 0) {
@@ -143,67 +326,88 @@
             .catch(err => console.error("Lỗi tải sinh viên:", err));
     }
 
-    //4. Thêm thủ công 1 sinh viên
-    function addSV() {
+    //4. Hiện Overlay thêm sinh viên
+    function toggleAddForm() {
+        const overlay = document.getElementById("addOverlay");
+        overlay.style.display = "flex";
+    }
+    //4.1. Hủy/đóng overlay
+    document.getElementById("btnCancelAdd").addEventListener("click", () => {
+        document.getElementById("addOverlay").style.display = "none";
+    });
+
+    //4.2. Gửi dữ liệu form tới API
+    function submitAddStudent() {
         const deptId = document.getElementById("departmentSelect").value;
         if (!deptId) return alert("Vui lòng chọn khoa trước!");
 
-        const id = prompt("Nhập mã sinh viên:");
-        if (!id) return;
+        const id = document.getElementById("newId").value.trim();
+        const fullname = document.getElementById("newName").value.trim();
+        const email = document.getElementById("newEmail").value.trim();
+        const dob = document.getElementById("newDob").value.trim();
+        const entryYear = document.getElementById("newYear").value.trim();
+        const password = document.getElementById("newPass").value.trim();
+        const status = document.getElementById("sv_status").value === "true";
 
-        const fullname = prompt("Nhập họ và tên:");
-        if (!fullname) return;
-
-        const email = prompt("Nhập email:");
-        if (!email) return;
-
-        const dob = prompt("Nhập ngày sinh (dd-mm-yyyy):");
-        const password = prompt("Nhập mật khẩu:");
-        const entryYear = prompt("Nhập năm nhập học:");
-        const status = prompt("Nhập trạng thái (VD: Đang học, Tốt nghiệp...):");
-
-        if (!confirm(`Xác nhận thêm sinh viên:\n${id} - ${fullname}`)) return;
-
+        if (!id || !fullname || !email || !dob || !entryYear || !status || !password) {
+            return alert("Vui lòng nhập đầy đủ thông tin!");
+        }
+        // hàm thêm SV
         fetch(`${API_BASE}/api/admin/add_student/${deptId}`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                id: id,
-                password: password,
-                fullname: fullname,
+                id, 
+                password,       // từ khóa nào giống API thì giữ, ko thì ~định nghĩa lại
+                fullname, 
                 date_of_birth: dob,
-                email: email,
-                entry_year: entryYear,
-                status: status
+                email, 
+                entry_year: entryYear, 
+                status          // boolean: true hoặc false (trong models.py)
             })
         })
         .then(res => res.json())
         .then(result => {
-            alert(result.message || "Thêm thành công!");
+            alert(result.message || "Thêm sinh viên thành công!");
+            document.getElementById("formAdd").style.display = "none";
             loadStudents();
         })
         .catch(() => alert("Không thể thêm sinh viên!"));
     }
 
     //5. Sửa thông tin sinh viên
+    let currentEditId = null; // giữ id sinh viên đang sửa
     function Edit(id) {
-        const newEmail = prompt("Nhập email mới (để trống nếu giữ nguyên):");
-        const newName = prompt("Nhập tên mới (để trống nếu giữ nguyên):");
-        const newDob = prompt("Nhập ngày sinh mới (dd-mm-yyyy):");
-        const newYear = prompt("Nhập năm nhập học mới:");
-        const newStatus = prompt("Nhập trạng thái mới:");
+        currentEditId = id;
+        const row = document.querySelector(`button[data-id="${id}"]`).closest("tr");
+        const tds = row.querySelectorAll("td");
 
-        if (!confirm("Xác nhận cập nhật sinh viên này?")) return;
+        // Lấy thông tin hiện tại từ bảng
+        document.getElementById("editName").value = tds[2].textContent.trim();
+        document.getElementById("editEmail").value = tds[3].textContent.trim();
+        document.getElementById("editDob").value = tds[4].textContent.trim();
+        document.getElementById("editYear").value = tds[5].textContent.trim();
+        const statusText = tds[6].textContent.trim();
+        document.getElementById("editStatus").value = statusText === "Đang học" ? "true" : "false";
 
-        const payload = {};
-        if (newEmail) payload.email = newEmail;
-        if (newName) payload.full_name = newName;
-        if (newDob) payload.date_of_birth = newDob;
-        if (newYear) payload.entry_year = newYear;
-        if (newStatus) payload.status = newStatus;
+        // Hiện form overlay
+        document.getElementById("editOverlay").style.display = "flex";
+    }
 
-        fetch(`${API_BASE}/api/admin/update_student/${id}`, {
+    //5.1. Sự liện xử lý nút Lưu
+    document.getElementById("btnSaveEdit").addEventListener("click", () => {
+        if (!currentEditId) return alert("Không xác định sinh viên!");
+
+        const payload = {
+            full_name: document.getElementById("editName").value.trim(),
+            email: document.getElementById("editEmail").value.trim(),
+            date_of_birth: document.getElementById("editDob").value.trim(),
+            entry_year: document.getElementById("editYear").value.trim(),
+            status: document.getElementById("editStatus").value === "true"
+        };
+
+        fetch(`${API_BASE}/api/admin/update_student/${currentEditId}`, {
             method: "PUT",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -212,10 +416,17 @@
         .then(res => res.json())
         .then(result => {
             alert(result.message || "Cập nhật thành công!");
+            document.getElementById("editOverlay").style.display = "none";
             loadStudents();
         })
         .catch(() => alert("Lỗi khi cập nhật sinh viên!"));
-    }
+    });
+
+    //5.2. Sự kiện sử lý nút Hủy
+    document.getElementById("btnCancelEdit").addEventListener("click", () => {
+        document.getElementById("editOverlay").style.display = "none";
+    });
+
 
     //6. Thêm nhiều SV bằng file Excel
     function Excel() {
@@ -266,12 +477,12 @@
             });
         }
     }
+    
     document.addEventListener("DOMContentLoaded", function() {
         header();
         loadDepartments();
 
         document.getElementById("departmentSelect").addEventListener("change", loadStudents);
-        document.getElementById("btnAddStudent").addEventListener("click", addSV);
         document.getElementById("btnExcel").addEventListener("click", Excel);
 
         document.body.addEventListener("click", function(e) {
@@ -281,6 +492,12 @@
                 Edit(id);
             }
         });
+        document.getElementById("btnToggleForm").addEventListener("click", toggleAddForm);
+        document.getElementById("btnSubmitAdd").addEventListener("click", submitAddStudent);
+        document.getElementById("btnCancelAdd").addEventListener("click", () => {
+            document.getElementById("formAdd").style.display = "none";
+        });
+
         Search();
     });
     </script>

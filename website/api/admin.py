@@ -329,8 +329,12 @@ def add_lecturer(department_id):
         hashed_password = generate_password_hash(password)
         
         birthday_obj = None
+ #       try:
+ #           birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y").date()
+ #       except ValueError:
+ #           return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
         try:
-            birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y").date()
+            birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y")  #không dùng .date() — giữ nguyên kiểu datetime.datetime như trong User ở models.py
         except ValueError:
             return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
 
@@ -338,10 +342,11 @@ def add_lecturer(department_id):
             id=id,
             email=email,
             full_name=full_name,
-            password=hashed_password,
+ #           password=hashed_password, # thuộc tính password không tồn tại trong class User của models.py, chỉ có password_hash
             role=role,
             date_of_birth=birthday_obj
         )
+        new_user.set_password(password)  # ← dùng setter có sẵn
         db.session.add(new_user)
 
         new_lecturer = Lecturer(
@@ -658,8 +663,12 @@ def add_student(department_id):
         # Xử lý mật khẩu và ngày sinh
         hashed_password = generate_password_hash(password)
         birthday_obj = None
+ #       try:
+ #           birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y").date()
+ #       except ValueError:
+ #           return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
         try:
-            birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y").date()
+            birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y")  #không dùng .date() — giữ nguyên kiểu datetime.datetime như trong User ở models.py
         except ValueError:
             return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
 
@@ -668,10 +677,11 @@ def add_student(department_id):
             id=id,
             email=email,
             full_name=full_name,
-            password=hashed_password,
+ #           password=hashed_password,  # thuộc tính password không tồn tại trong class User của models.py, chỉ có password_hash
             role=role, # Role là 'student'
             date_of_birth=birthday_obj
         )
+        new_user.set_password(password)  # ← dùng setter có sẵn
         db.session.add(new_user)
 
         # Tạo bản ghi Student
