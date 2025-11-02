@@ -562,7 +562,7 @@ def students(department_id):
                 "email": email,
                 "Họ và Tên": full_name,
                 "Ngày sinh":date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
-                "Trạng thái":status,
+                "Trạng thái":"Đang học" if status else "Thôi học",
                 "Khóa học":entry_year
             })
         return jsonify(user_data)
@@ -598,7 +598,7 @@ def students_excel(department_id):
                 "email": email,
                 "Họ và Tên": full_name,
                 "Ngày Sinh":date_of_birth.strftime("%d-%m-%Y") if date_of_birth else None,
-                "Trạng thái":status,
+                "Trạng thái":"Đang học" if status else "Thôi học",
                 "Khóa học":entry_year
             })
     except Exception as e:
