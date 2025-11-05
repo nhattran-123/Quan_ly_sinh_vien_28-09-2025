@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Các lớp đăng ký</title>
+  <link rel="stylesheet" href="../../static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* --- Overlay popup --- */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .overlay.active { display: flex; }
+    .popup {
+      background: white;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow: auto;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    .popup header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .popup h2 { margin: 0; color: #b50000; }
+    .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #444;
+    }
+    .close-btn:hover { color: red; }
+    .popup table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+    }
+    .popup table th, .popup table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    .popup table th {
+      background-color: #b50000;
+      color: white;
+    }
+    #excel_out {
+      margin-top: 10px;
+      background-color: #b50000;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #excel_out:hover { background-color: #a30000; }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <header class="page-header">
+      <div class="header-left">
+        <h1>Xin chào, <span id="userName">Đang tải...</span></h1>
+      </div>
+      <div class="header-right">
+        Học viện Công nghệ Bưu chính Viễn thông (PTIT - Miền Bắc)
+      </div>
+    </header>
+
+    <div class="page-body">
+      <aside class="sidebar-nav">
+        <ul>
+          <li><a href="trangChu.html">Trang chủ</a></li>
+          <li><a href="../index.html#reset">Đổi mật khẩu</a></li>
+          <li><a href="newInfo.html">Cập nhật thông tin</a></li>
+          <li class="active"><a href="cacLopDangKy.html">Các lớp đăng ký</a></li>
+          <li><a href="cacMonDangKy.html">Các môn đăng ký</a></li>
+          <li><a href="../index.html#logout">Đăng Xuất</a></li>
+        </ul>
+      </aside>
+
+      <main class="content-area">
+        <h2 class="content-title">Các Lớp Đăng Ký Trong Kỳ</h2>
+
+        <div class="term-selector">
+          <label for="termSelect">Chọn kỳ học:</label>
+          <select id="termSelect">
+            <option value="">Đang tải kỳ học...</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="danhSach classes-table">
+            <thead>
+              <tr>
+                <th>Mã Lớp</th>
+                <th>Mã Môn</th>
+                <th>Tên Môn</th>
+                <th>Tên Giảng Viên</th>
+                <th>Phòng Học</th>
+                <th>Ngày Bắt Đầu</th>
+                <th>Ngày Kết Thúc</th>
+                <th>DS Sinh viên</th>
+              </tr>
+            </thead>
+            <tbody id="classListBody">
+              <tr><td colspan="8" style="text-align:center;">Vui lòng chọn kỳ học...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <footer class="page-footer">Phiên bản 1</footer>
+  </div>
+
+  <!-- Overlay popup -->
+  <div id="studentOverlay" class="overlay">
+    <div class="popup">
+      <header>
+        <h2>Danh sách sinh viên</h2>
+        <button class="close-btn" id="closePopup">&times;</button>
+      </header>
+      <button id="excel_out">📄 Xuất file Excel</button>
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Họ tên</th>
+            <th>Mã sinh viên</th>
+            <th>Email</th>
+            <th>Ngày sinh</th>
+          </tr>
+        </thead>
+        <tbody id="studentListBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="../../static/form.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const termSelect = document.getElementById('termSelect');
+      const classListBody = document.getElementById('classListBody');
+      const userNameHeader = document.getElementById('userName');
+      const overlay = document.getElementById('studentOverlay');
+      const closeBtn = document.getElementById('closePopup');
+      const studentListBody = document.getElementById('studentListBody');
+      const exportBtn = document.getElementById('excel_out');
+      let currentClassId = null;
+      let currentTermId = null;
+
+      function loadUserName() {
+        fetch(`${API_BASE}/api/auth/current_user`, { method: 'GET', credentials: 'include' })
+          .then(r => r.json()).then(d => userNameHeader.textContent = d["Họ và Tên"] || 'Bạn')
+          .catch(() => userNameHeader.textContent = "Khách");
+      }
+
+      function loadTerms() {
+        fetch(`${API_BASE}/api/student/terms`, { method: 'GET', credentials: 'include' })
+          .then(res => res.json())
+          .then(data => {
+            termSelect.innerHTML = '';
+            data.forEach(term => {
+              const opt = document.createElement('option');
+              opt.value = term["Mã kỳ học"];
+              opt.textContent = `${term["Tên kỳ học"]} (${term["Ngày bắt đầu"]} - ${term["Ngày kết thúc"]})`;
+              termSelect.appendChild(opt);
+            });
+            if (data[0]) loadClasses(data[0]["Mã kỳ học"]);
+          });
+      }
+
+      function loadClasses(termId) {
+        currentTermId = termId;
+        fetch(`${API_BASE}/api/student/enrollments/${termId}`, { method: 'GET', credentials: 'include' })
+          .then(res => res.json())
+          .then(data => {
+            classListBody.innerHTML = '';
+            data.forEach(cls => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${cls["Mã lớp"]}</td>
+                <td>${cls["Mã Môn"]}</td>
+                <td>${cls["Tên Môn"]}</td>
+                <td>${cls["Giảng viên phụ trách"]}</td>
+                <td>${cls["Phòng học"]}</td>
+                <td>${cls["Ngày bắt đầu"]}</td>
+                <td>${cls["Ngày kết thúc"]}</td>
+                <td><button class="view-btn" data-class="${cls["Mã lớp"]}"><i class="fas fa-eye"></i></button></td>
+              `;
+              classListBody.appendChild(row);
+            });
+            document.querySelectorAll('.view-btn').forEach(btn => {
+              btn.addEventListener('click', e => {
+                const classId = e.currentTarget.dataset.class;
+                currentClassId = classId;
+                openOverlay(classId);
+              });
+            });
+          });
+      }
+
+      function openOverlay(classId) {
+        overlay.classList.add('active');
+        studentListBody.innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
+        fetch(`${API_BASE}/api/student/list-student/${classId}/${currentTermId}`, { method: 'GET', credentials: 'include' })
+          .then(res => res.json())
+          .then(data => {
+            studentListBody.innerHTML = '';
+            data.forEach(sv => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${sv["STT"]}</td>
+                <td>${sv["Họ và tên"]}</td>
+                <td>${sv["id"]}</td>
+                <td>${sv["email"]}</td>
+                <td>${sv["Ngày sinh"]}</td>`;
+              studentListBody.appendChild(tr);
+            });
+          });
+      }
+
+      exportBtn.addEventListener('click', () => {
+        if (currentClassId)
+          window.location = `${API_BASE}/api/student/list_student/export-excel/${currentClassId}`;
+      });
+
+      closeBtn.addEventListener('click', () => overlay.classList.remove('active'));
+      overlay.addEventListener('click', e => {
+        if (e.target === overlay) overlay.classList.remove('active');
+      });
+
+      termSelect.addEventListener('change', e => loadClasses(e.target.value));
+
+      loadUserName();
+      loadTerms();
+    });
+  </script>
+</body>
+</html>
