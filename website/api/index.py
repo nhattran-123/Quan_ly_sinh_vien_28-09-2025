@@ -31,7 +31,7 @@ def login():
     user = User.query.get(user_id)
     if not user or not user.check_password(password):
         return jsonify({"error": "ID hoặc mật khẩu không đúng"}), 401
-    login_user(user, remember=True)
+    login_user(user, remember=False)
 
     resp = make_response(jsonify({
         "message": "Đăng nhập thành công",
