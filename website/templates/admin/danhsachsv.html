@@ -265,7 +265,6 @@
         fetch(`${API_BASE}/api/admin/userinfo`, { credentials: "include" })
             .then(res => res.json())
             .then(data => {
-                console.log("Dữ liệu của Admin được trả về:", data);
                 if (!data || data.error) throw new Error("Không thể lấy thông tin người dùng");
                 document.getElementById("header").textContent = data["Họ và Tên"];
             })
@@ -279,7 +278,6 @@
         fetch(`${API_BASE}/api/admin/list_department`, { credentials: "include" })
             .then(res => res.json())
             .then(data => {
-                console.log("Dữ liệu các khoa được trả về:", data);
                 const select = document.getElementById("departmentSelect");
                 select.innerHTML = '<option value="">-- Chọn khoa --</option>';
                 data.forEach(d => {
@@ -295,46 +293,62 @@
     // 3. Tải danh sách sinh viên
     function loadStudents() {
         const deptId = document.getElementById("departmentSelect").value;
-        if (!deptId) return;
+        if (!deptId) {
+             document.getElementById("dsSV").innerHTML = '<tr><td colspan="8" style="text-align:center;">Vui lòng chọn khoa...</td></tr>';
+             return;
+        }
+        
         fetch(`${API_BASE}/api/admin/students/${deptId}`, { credentials: "include" })
-            .then(res => res.json())
+            .then(res => {
+                // Nếu res không ok (ví dụ 404), vẫn parse JSON để lấy message lỗi
+                if (!res.ok) { 
+                    return res.json().then(err => { throw new Error(err.message || "Lỗi tải dữ liệu") });
+                }
+                return res.json();
+            })
             .then(data => {
-                console.log("Dữ liệu các sinh viên đuợc trả về:", data);
                 const body = document.getElementById("dsSV");
                 body.innerHTML = "";
-                if (!Array.isArray(data) || data.length === 0) {
-                    body.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có sinh viên nào.</td></tr>';
-                    return;
+                // Nếu API trả về mảng (thành công)
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach((st, index) => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${st.id}</td>
+                            <td>${st["Họ và Tên"]}</td>
+                            <td>${st.email}</td>
+                            <td>${st["Ngày sinh"] || ""}</td>
+                            <td>${st["Khóa học"]}</td>
+                            <td>${st["Trạng thái"]}</td>
+                            <td>
+                                <button class="btn-edit" data-id="${st.id}"><i class="fa fa-wrench"></i></button>
+                            </td>
+                        `;
+                        body.appendChild(tr);
+                    });
+                } else {
+                    // Nếu mảng rỗng hoặc API trả về message (ví dụ: "Không có sinh viên")
+                     body.innerHTML = '<tr><td colspan="8" style="text-align:center;">Không có sinh viên nào trong khoa này.</td></tr>';
                 }
-                data.forEach((st, index) => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>${st.id}</td>
-                        <td>${st["Họ và Tên"]}</td>
-                        <td>${st.email}</td>
-                        <td>${st["Ngày sinh"] || ""}</td>
-                        <td>${st["Khóa học"]}</td>
-                        <td>${st["Trạng thái"]}</td>
-                        <td>
-                            <button class="btn-edit" data-id="${st.id}"><i class="fa fa-wrench"></i></button>
-                         </td>
-                    `;
-                    body.appendChild(tr);
-                });
             })
-            .catch(err => console.error("Lỗi tải sinh viên:", err));
+            .catch(err => {
+                 // Bắt lỗi từ throw new Error (bao gồm cả lỗi 404)
+                console.error("Lỗi tải sinh viên:", err);
+                const body = document.getElementById("dsSV");
+                // Hiển thị message lỗi từ API (ví dụ: "Không tìm thấy sinh viên nào...")
+                body.innerHTML = `<tr><td colspan="8" style="text-align:center;">${err.message || "Lỗi tải dữ liệu"}</td></tr>`;
+            });
     }
 
     //4. Hiện Overlay thêm sinh viên
     function toggleAddForm() {
-        const overlay = document.getElementById("addOverlay");
-        overlay.style.display = "flex";
+        document.getElementById("addOverlay").style.display = "flex";
     }
     //4.1. Hủy/đóng overlay
-    document.getElementById("btnCancelAdd").addEventListener("click", () => {
-        document.getElementById("addOverlay").style.display = "none";
-    });
+    function cancelAddForm() {
+         document.getElementById("addOverlay").style.display = "none";
+    }
 
     //4.2. Gửi dữ liệu form tới API
     function submitAddStudent() {
@@ -349,9 +363,11 @@
         const password = document.getElementById("newPass").value.trim();
         const status = document.getElementById("sv_status").value === "true";
 
-        if (!id || !fullname || !email || !dob || !entryYear || !status || !password) {
+        // Kiểm tra thiếu thông tin (đã sửa, không kiểm tra status)
+        if (!id || !fullname || !email || !dob || !entryYear || !password) {
             return alert("Vui lòng nhập đầy đủ thông tin!");
         }
+        
         // hàm thêm SV
         fetch(`${API_BASE}/api/admin/add_student/${deptId}`, {
             method: "POST",
@@ -359,31 +375,35 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 id, 
-                password,       // từ khóa nào giống API thì giữ, ko thì ~định nghĩa lại
+                password,
                 fullname, 
                 date_of_birth: dob,
                 email, 
                 entry_year: entryYear, 
-                status          // boolean: true hoặc false (trong models.py)
+                status: status // API đã được sửa để nhận boolean
             })
         })
-        .then(res => res.json())
+        .then(res => {
+             if (!res.ok) {
+                return res.json().then(err => { throw new Error(err.message || "Lỗi không xác định") });
+            }
+            return res.json();
+        })
         .then(result => {
             alert(result.message || "Thêm sinh viên thành công!");
-            document.getElementById("formAdd").style.display = "none";
+            cancelAddForm(); // <-- SỬA LỖI 1: Gọi hàm đóng overlay
             loadStudents();
         })
-        .catch(() => alert("Không thể thêm sinh viên!"));
+        .catch((err) => alert("Không thể thêm sinh viên: " + err.message));
     }
 
     //5. Sửa thông tin sinh viên
-    let currentEditId = null; // giữ id sinh viên đang sửa
+    let currentEditId = null; 
     function Edit(id) {
         currentEditId = id;
         const row = document.querySelector(`button[data-id="${id}"]`).closest("tr");
         const tds = row.querySelectorAll("td");
 
-        // Lấy thông tin hiện tại từ bảng
         document.getElementById("editName").value = tds[2].textContent.trim();
         document.getElementById("editEmail").value = tds[3].textContent.trim();
         document.getElementById("editDob").value = tds[4].textContent.trim();
@@ -391,7 +411,6 @@
         const statusText = tds[6].textContent.trim();
         document.getElementById("editStatus").value = statusText === "Đang học" ? "true" : "false";
 
-        // Hiện form overlay
         document.getElementById("editOverlay").style.display = "flex";
     }
 
@@ -428,31 +447,41 @@
     });
 
 
-    //6. Thêm nhiều SV bằng file Excel
-    function Excel() {
+    //6. Thêm nhiều SV bằng file Excel --- ĐÃ SỬA LỖI LOGIC ---
+    function uploadExcel() {
         const deptId = document.getElementById("departmentSelect").value;
         if (!deptId) return alert("Vui lòng chọn khoa!");
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = ".xlsx,.xls";
-        input.onchange = function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const formData = new FormData();
-            formData.append("file", file);
-            fetch(`${API_BASE}/api/admin/upload_excel_student/${deptId}`, {
-                method: "POST",
-                credentials: "include",
-                body: formData
-            })
-            .then(res => res.json())
-            .then(result => {
-                alert(result.message || "Đã xử lý file Excel!");
-                loadStudents();
-            })
-            .catch(() => alert("Lỗi khi tải file Excel!"));
-        };
-        input.click();
+        
+        const fileInput = document.getElementById("excelFile"); // Lấy input có sẵn
+        const file = fileInput.files[0]; // Lấy file từ đó
+        
+        if (!file) { // Kiểm tra nếu chưa chọn file
+             alert("Vui lòng chọn file Excel trước khi nhấn Upload!");
+             return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        fetch(`${API_BASE}/api/admin/upload_excel_student/${deptId}`, {
+            method: "POST",
+            credentials: "include",
+            body: formData
+        })
+        .then(res => {
+            if (!res.ok) {
+                 return res.json().then(err => { throw new Error(err.messages ? err.messages.join('\n') : (err.message || "Lỗi không xác định")) });
+            }
+            return res.json();
+        })
+        .then(result => {
+            let msg = result.message || "Đã xử lý file Excel!";
+            if (result.added_count) msg += `\nĐã thêm: ${result.added_count}`;
+            if (result.skipped_count) msg += `\nBỏ qua: ${result.skipped_count}`;
+            alert(msg);
+            loadStudents();
+        })
+        .catch((err) => alert("Lỗi khi tải file Excel: \n" + err.message));
     }
 
      //7. Tìm kiếm theo tên / mã
@@ -470,32 +499,33 @@
             rows.forEach(row => {
                 const tds = row.querySelectorAll("td");
                 if (!tds.length) return;
-                const tenSV = tds[1].textContent.toLowerCase().includes(ten);
-                const maSV = tds[2].textContent.toLowerCase().includes(ma);
-                const match = tenSV && maSV;
-                row.style.display = match ? "" : "none";
+                // Sửa chỉ mục cột tìm kiếm (Tên: cột 2, Mã: cột 1)
+                const matchTen = tds[2].textContent.toLowerCase().includes(ten);
+                const matchMa = tds[1].textContent.toLowerCase().includes(ma);
+                row.style.display = (matchTen && matchMa) ? "" : "none";
             });
         }
     }
     
+    // --- GẮN SỰ KIỆN KHI TRANG TẢI ---
     document.addEventListener("DOMContentLoaded", function() {
         header();
         loadDepartments();
 
+        // Gắn sự kiện cho các nút chính
         document.getElementById("departmentSelect").addEventListener("change", loadStudents);
-        document.getElementById("btnExcel").addEventListener("click", Excel);
+        document.getElementById("btnExcel").addEventListener("click", uploadExcel); // Sửa: gọi hàm uploadExcel
+        document.getElementById("btnToggleForm").addEventListener("click", toggleAddForm);
+        document.getElementById("btnSubmitAdd").addEventListener("click", submitAddStudent);
+        document.getElementById("btnCancelAdd").addEventListener("click", cancelAddForm); // Sửa: gọi hàm cancelAddForm
 
+        // Gắn sự kiện cho nút sửa (dùng event delegation)
         document.body.addEventListener("click", function(e) {
             const editBtn = e.target.closest(".btn-edit");
             if (editBtn) {
                 const id = editBtn.dataset.id;
                 Edit(id);
             }
-        });
-        document.getElementById("btnToggleForm").addEventListener("click", toggleAddForm);
-        document.getElementById("btnSubmitAdd").addEventListener("click", submitAddStudent);
-        document.getElementById("btnCancelAdd").addEventListener("click", () => {
-            document.getElementById("formAdd").style.display = "none";
         });
 
         Search();

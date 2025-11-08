@@ -634,13 +634,10 @@ def add_student(department_id):
     email = data.get("email")
     role = 'student' # Gán role là 'student'
     entry_year = data.get("entry_year")
-    status = data.get("status")
-    if status == "1": status = True
-    else: status = False
+    status_bool = data.get("status")
     
     # Kiểm tra thiếu thông tin
-    required_fields = [id, password, full_name, birthday_str, email, entry_year, status]
-    if not all(required_fields):
+    if not all([id, password, full_name, birthday_str, email, entry_year]):
         return jsonify({
             "error": "Thiếu thông tin",
             "message": "Vui lòng nhập đủ: id, password, fullname, date_of_birth, email, entry_year, status"
@@ -671,9 +668,10 @@ def add_student(department_id):
             email=email,
             full_name=full_name,
             role=role, # Role là 'student'
-            date_of_birth=birthday_obj
+            date_of_birth=birthday_obj,
+            password_hash=hashed_password
+
         )
-        new_user.set_password(password)  # ← dùng setter có sẵn
         db.session.add(new_user)
 
         # Tạo bản ghi Student
@@ -681,7 +679,7 @@ def add_student(department_id):
             user_id=id, 
             department_id=department_id, # Lấy từ URL
             entry_year=entry_year,
-            status=status
+            status=status_bool
         )
         db.session.add(new_student)
         
@@ -750,7 +748,7 @@ def upload_excel_student(department_id):
         else: status = False
 
         # 1. Kiểm tra thiếu thông tin
-        required_cols = [id, email, password_hash, full_name, dob_str, entry_year, status]
+        required_cols = [id, email, password_hash, full_name, dob_str, entry_year]
         if not all(required_cols):
             errors.append(f"Hàng {idx}: Thiếu thông tin.")
             continue 

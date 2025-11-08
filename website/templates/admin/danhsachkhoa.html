@@ -280,6 +280,7 @@
     function openAddForm() { document.getElementById("addKhoaOverlay").style.display = "flex"; }
     function closeAddForm() { document.getElementById("addKhoaOverlay").style.display = "none"; }
 
+    // === HÀM ĐÃ SỬA LỖI LOGIC ===
     function submitAddKhoa() {
       const id = document.getElementById("khoa_id").value.trim();
       const name = document.getElementById("khoa_name").value.trim();
@@ -292,20 +293,26 @@
         body: JSON.stringify({ id, name })
       })
       .then(res => {
-        if(res.ok) {
-          alert("Xóa khoa thành công");
-          // reload trang
-        } else {
-          res.json().then(data => alert(data.message || "Không xóa được khoa"));
+        // Logic chuẩn: Nếu res không OK, ném lỗi để catch xử lý
+        if (!res.ok) {
+            return res.json().then(err => { 
+                throw new Error(err.message || "Lỗi từ server"); 
+            });
         }
+        return res.json(); // Nếu OK, chuyển JSON cho .then() tiếp theo
       })
       .then(result => {
+        // 'result' bây giờ là JSON hợp lệ (ví dụ: {message: "..."})
         alert(result.message || "Thêm khoa thành công!");
         closeAddForm();
         loadDepartments();
       })
-      .catch(() => alert("Không thể thêm khoa!"));
+      .catch((err) => {
+        // Bắt lỗi (lỗi mạng, hoặc lỗi throw new Error ở trên)
+        alert("Không thể thêm khoa: \n" + err.message);
+      });
     }
+    // === KẾT THÚC SỬA LỖI ===
 
     // Sửa khoa (mở popup)
     function openEditForm(id, name) {
@@ -337,27 +344,26 @@
 
     // Xóa khoa
     function deleteKhoa(id) {
-  if (!confirm(`Bạn có chắc muốn xóa khoa ${id}?`)) return;
+      if (!confirm(`Bạn có chắc muốn xóa khoa ${id}?`)) return;
 
-  fetch(`${API_BASE}/api/admin/delete-department/${id}`, {
-    method: "DELETE",
-    credentials: "include"
-  })
-  .then(res => {
-    if (res.status === 204) {
-      alert("Xóa khoa thành công!");
-      // Chỉ cần gọi loadDepartments() để cập nhật bảng
-      loadDepartments();
-    } else {
-      return res.json().then(data => {
-        alert(data.message || "Không xóa được khoa.");
+      fetch(`${API_BASE}/api/admin/delete-department/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      })
+      .then(res => {
+        if (res.status === 204) {
+          alert("Xóa khoa thành công!");
+          loadDepartments();
+        } else {
+          return res.json().then(data => {
+            alert(data.message || "Không xóa được khoa.");
+          });
+        }
+      })
+      .catch(err => {
+        alert("Lỗi mạng: " + err);
       });
     }
-  })
-  .catch(err => {
-    alert("Lỗi mạng: " + err);
-  });
-}
 
 
     // Tìm kiếm
