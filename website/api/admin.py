@@ -330,7 +330,7 @@ def add_lecturer(department_id):
         
         birthday_obj = None
         try:
-            birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y")  #không dùng .date() — giữ nguyên kiểu datetime.datetime như trong User ở models.py
+            birthday_obj = datetime.strptime(birthday_str, "%d-%m-%Y") 
         except ValueError:
             return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
 
@@ -512,7 +512,7 @@ def update_lecturer(lecturer_id):
         dob_str = data.get('date_of_birth')
         if dob_str:
             try:
-                user.date_of_birth = datetime.strptime(dob_str, "%d-%m-%Y").date()
+                user.date_of_birth = datetime.strptime(dob_str, "%d-%m-%Y")
             except ValueError:
                 return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
 
@@ -635,6 +635,8 @@ def add_student(department_id):
     role = 'student' # Gán role là 'student'
     entry_year = data.get("entry_year")
     status = data.get("status")
+    if status == "1": status = True
+    else: status = False
     
     # Kiểm tra thiếu thông tin
     required_fields = [id, password, full_name, birthday_str, email, entry_year, status]
@@ -744,6 +746,8 @@ def upload_excel_student(department_id):
         dob_str = row.get('date_of_birth')
         entry_year = row.get('entry_year')
         status = row.get('status')
+        if status == "1": status = True
+        else: status = False
 
         # 1. Kiểm tra thiếu thông tin
         required_cols = [id, email, password_hash, full_name, dob_str, entry_year, status]
@@ -761,7 +765,7 @@ def upload_excel_student(department_id):
 
         # 3. Xử lý ngày sinh
         try:
-            date_of_birth_obj = pd.to_datetime(dob_str, format="%d-%m-%Y").date()
+            date_of_birth_obj = pd.to_datetime(dob_str, format="%d-%m-%Y")
         except (ValueError, TypeError):
             errors.append(f"Hàng {idx}: Ngày sinh '{dob_str}' sai định dạng (phải là dd-mm-YYYY).")
             continue
@@ -770,7 +774,7 @@ def upload_excel_student(department_id):
         hashed_password = generate_password_hash(password_hash)
         
         new_user = User(
-            id=id, email=email, password=hashed_password,
+            id=id, email=email, password_hash=hashed_password,
             role='student', full_name=full_name, date_of_birth=date_of_birth_obj
         )
         new_student = Student(
@@ -846,7 +850,7 @@ def update_student(student_id):
         dob_str = data.get('date_of_birth')
         if dob_str:
             try:
-                user.date_of_birth = datetime.strptime(dob_str, "%d-%m-%Y").date()
+                user.date_of_birth = datetime.strptime(dob_str, "%d-%m-%Y")
             except ValueError:
                 return jsonify({"error": "Lỗi định dạng", "message": "Ngày sinh phải theo định dạng dd-mm-YYYY"}), 400
 
