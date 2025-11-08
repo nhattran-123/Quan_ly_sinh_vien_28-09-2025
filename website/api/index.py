@@ -31,10 +31,7 @@ def login():
     user = User.query.get(user_id)
     if not user or not user.check_password(password):
         return jsonify({"error": "ID hoặc mật khẩu không đúng"}), 401
-
-    # Đăng nhập và tạo session
-    login_user(user, remember=True)  # remember=True để lưu cookie lâu dài
-    session['user_id'] = user.id     # lưu user_id vào session
+    login_user(user, remember=True)
 
     resp = make_response(jsonify({
         "message": "Đăng nhập thành công",
@@ -42,10 +39,6 @@ def login():
         "Họ và Tên": user.full_name,
         "role": user.role
     }), 200)
-
-    # Đặt cookie (tùy chỉnh thêm, ví dụ 1h)
-    resp.set_cookie("user_id", user.id, max_age=900, httponly=True, samesite='Lax')
-
     return resp
 
 
@@ -55,10 +48,7 @@ def login():
 def logout():
     """API đăng xuất"""
     logout_user()
-    session.pop("user_id", None)
-
     resp = make_response(jsonify({"message": "Đăng xuất thành công"}), 200)
-    resp.delete_cookie("user_id")
     return resp
 
 
