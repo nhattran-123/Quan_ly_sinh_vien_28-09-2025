@@ -300,20 +300,16 @@ def grade(course_id):
             ClassSection.course_id == course_id
         )\
         .options(
-            # Tải luôn relationship 'class_section' để dùng ở dưới
             joinedload(Enrollment.class_section).joinedload(ClassSection.course),
             joinedload(Enrollment.class_section).joinedload(ClassSection.term)
         )\
-        .first() # Lấy bản ghi đầu tiên tìm thấy
+        .first()
 
     if not enrollment:
         return jsonify({
             "error": "lỗi",
             "message": "Bạn không đăng ký môn học này, hoặc môn học không tồn tại."
         }), 404
-
-    # Bây giờ ta đã có 'enrollment' chính xác
-    # Và có thể truy cập 'class_section' qua relationship
     class_section = enrollment.class_section 
 
     # --- Phần code này của bạn đã đúng ---
@@ -334,14 +330,12 @@ def grade(course_id):
             "Tên điểm": name,
             "Điểm": score
         })
-
-    # --- Phần này của bạn bây giờ sẽ hoạt động ---
     return jsonify({
         "MSV": current_user.id,
         "Họ và tên": current_user.full_name,
-        "Tên môn học": class_section.course.name, # Đã hoạt động
-        "Mã lớp": class_section.id,           # Đã hoạt động
-        "Kỳ học": class_section.term.name,     # Đã hoạt động
+        "Tên môn học": class_section.course.name, 
+        "Mã lớp": class_section.id,           
+        "Kỳ học": class_section.term.name,    
         "Điểm thành phần": grade_details,
         "Tổng kết": {
             "Điểm số": enrollment.final_grade,

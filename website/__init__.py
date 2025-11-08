@@ -10,9 +10,6 @@ login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
-
-    # <<< THÊM CẤU HÌNH CORS NGAY SAU KHI TẠO APP >>>
-    # Cho phép origin cụ thể (frontend 5500) truy cập API và hỗ trợ credentials (cookies)
     CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "http://127.0.0.1:5500"}})
 
     app.config['SQLALCHEMY_DATABASE_URI'] = r'mssql+pyodbc://NHATTRAN\CLCCSDLPTNHOM11/Qlsv?driver=ODBC+Driver+18+for+SQL+Server&trusted_connection=yes&TrustServerCertificate=yes'

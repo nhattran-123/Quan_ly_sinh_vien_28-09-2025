@@ -108,8 +108,6 @@ def calculate_enrollment_final_grade(enrollment, weight_map):
     if total_weight > 0:
         final_grade_rounded = round(final_grade, 2)
         letter_grade = calculate_letter_grade(final_grade_rounded)
-        
-        # LOGIC BỔ SUNG: Nếu có bất kỳ điểm 0 nào trong điểm thành phần, ghi đè thành 'F'
         if has_zero_grade:
                 letter_grade = "F"
             
