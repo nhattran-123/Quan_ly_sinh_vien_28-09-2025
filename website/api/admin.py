@@ -198,7 +198,7 @@ def delete_department(department_id):
         
         db.session.delete(department)
         db.session.commit()
-        return '', 204
+        return "", 204
     except IntegrityError: 
         db.session.rollback()
         return jsonify({"error": "Xung đột", "message": "Không thể xóa khoa này vì vẫn còn giảng viên/lớp học liên kết."}), 409
@@ -418,7 +418,7 @@ def upload_excel_lecturer(department_id):
             continue
 
         try:
-            date_of_birth_obj = pd.to_datetime(dob_str, format="%d-%m-%Y").date()
+            date_of_birth_obj = pd.to_datetime(dob_str, format="%d-%m-%Y")
         except (ValueError, TypeError):
             errors.append(f"Hàng {idx}: Ngày sinh '{dob_str}' sai định dạng (phải là dd-mm-YYYY).")
             continue
@@ -428,7 +428,7 @@ def upload_excel_lecturer(department_id):
         new_user = User(
             id=id,
             email=email,
-            password=hashed_password,
+            password_hash=hashed_password,
             role='lecturer',
             full_name=full_name,
             date_of_birth=date_of_birth_obj
@@ -739,14 +739,14 @@ def upload_excel_student(department_id):
     for idx, row in enumerate(student_list, start=2):
         id = row.get("id")
         email = row.get('email')
-        password = row.get('password')
+        password_hash = row.get('password')
         full_name = row.get('full_name') # Giả sử tên cột là 'full_name'
         dob_str = row.get('date_of_birth')
         entry_year = row.get('entry_year')
         status = row.get('status')
 
         # 1. Kiểm tra thiếu thông tin
-        required_cols = [id, email, password, full_name, dob_str, entry_year, status]
+        required_cols = [id, email, password_hash, full_name, dob_str, entry_year, status]
         if not all(required_cols):
             errors.append(f"Hàng {idx}: Thiếu thông tin.")
             continue 
@@ -767,7 +767,7 @@ def upload_excel_student(department_id):
             continue
             
         # 4. Chuẩn bị thêm vào CSDL
-        hashed_password = generate_password_hash(password)
+        hashed_password = generate_password_hash(password_hash)
         
         new_user = User(
             id=id, email=email, password=hashed_password,
@@ -866,5 +866,4 @@ def update_student(student_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": "Lỗi CSDL", "message": str(e)}), 500
-    
+        return jsonify({"error": "Lỗi CSDL", "message": str(e)}), 500   

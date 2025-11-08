@@ -285,7 +285,7 @@
       const name = document.getElementById("khoa_name").value.trim();
       if (!id || !name) return alert("Vui lòng nhập đầy đủ thông tin!");
 
-      fetch(`${API_BASE}/api/admin/add-department`, {
+      fetch(`${API_BASE}/api/admin/add_department`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
