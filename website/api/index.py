@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session, make_response
+from flask import Blueprint, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from .. import db
 from ..models import User
@@ -32,14 +32,12 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"error": "ID hoặc mật khẩu không đúng"}), 401
     login_user(user, remember=False)
-
-    resp = make_response(jsonify({
+    return jsonify({
         "message": "Đăng nhập thành công",
         "id": user.id,
         "Họ và Tên": user.full_name,
         "role": user.role
-    }), 200)
-    return resp
+    }), 200
 
 
 # ------------------- LOGOUT -------------------
@@ -48,8 +46,7 @@ def login():
 def logout():
     """API đăng xuất"""
     logout_user()
-    resp = make_response(jsonify({"message": "Đăng xuất thành công"}), 200)
-    return resp
+    return jsonify({"message": "Đăng xuất thành công"}), 200
 
 
 # ------------------- CURRENT USER -------------------
