@@ -365,26 +365,36 @@
 
     //6. Upload Excel
     function uploadExcel() {
-      const deptId = departmentSelect.value;
-      if (!deptId) return alert("Vui lòng chọn khoa!");
-      const file = excelFile.files[0];
-      if (!file) return alert("Chưa chọn file Excel!");
+  const deptId = departmentSelect.value;
+  if (!deptId) return alert("Vui lòng chọn khoa!");
+  const file = excelFile.files[0];
+  if (!file) return alert("Chưa chọn file Excel!");
 
-      const formData = new FormData();
-      formData.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file);
 
-      fetch(`${API_BASE}/api/admin/upload_excel_lecturer/${deptId}`, {
-        method: "POST",
-        credentials: "include",
-        body: formData
-      })
-      .then(res => res.json())
-      .then(result => {
-        alert(result.message || "Đã tải file Excel!");
-        loadLecturers();
-      })
-      .catch(() => alert("Lỗi khi tải file Excel!"));
-    }
+  fetch(`${API_BASE}/api/admin/upload_excel_lecturer/${deptId}`, {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  })
+  .then(res => res.json().then(data => ({status: res.status, data})))
+  .then(obj => {
+    const { status, data } = obj;
+
+    let msg = data.message || "Đã tải file Excel!";
+    if (data.added_count) msg += `\nSố GV mới thêm: ${data.added_count}`;
+    if (data.skipped_count) msg += `\nSố GV trùng bỏ qua: ${data.skipped_count}`;
+    
+    alert(msg);
+
+    // Gọi loadLecturers sau 200ms để bảng cập nhật
+    setTimeout(() => {
+      loadLecturers();
+    }, 200);
+  })
+  .catch(err => alert("Lỗi khi tải file Excel: " + err));
+}
 
     //7. Sự kiện trang 
     document.addEventListener("DOMContentLoaded", () => {
